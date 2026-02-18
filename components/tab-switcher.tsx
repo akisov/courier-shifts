@@ -10,14 +10,14 @@ interface TabSwitcherProps {
 export function TabSwitcher({ activeTab, onTabChange }: TabSwitcherProps) {
   return (
     <div className="flex items-center justify-center px-4 py-3">
-      <div className="flex w-full max-w-xs rounded-lg bg-secondary p-1">
+      <div className="flex w-full rounded-xl bg-secondary p-1 gap-1">
         <button
           onClick={() => onTabChange("shifts")}
           className={cn(
-            "flex-1 rounded-md py-2 text-sm font-medium transition-all",
+            "flex-1 rounded-lg py-2.5 text-sm font-semibold transition-all",
             activeTab === "shifts"
               ? "bg-primary text-primary-foreground shadow-sm"
-              : "text-muted-foreground hover:text-foreground"
+              : "text-foreground/60 hover:text-foreground"
           )}
         >
           Мои выходы
@@ -25,10 +25,10 @@ export function TabSwitcher({ activeTab, onTabChange }: TabSwitcherProps) {
         <button
           onClick={() => onTabChange("reserve")}
           className={cn(
-            "flex-1 rounded-md py-2 text-sm font-medium transition-all",
+            "flex-1 rounded-lg py-2.5 text-sm font-semibold transition-all",
             activeTab === "reserve"
               ? "bg-primary text-primary-foreground shadow-sm"
-              : "text-muted-foreground hover:text-foreground"
+              : "text-foreground/60 hover:text-foreground"
           )}
         >
           Резерв

@@ -101,7 +101,7 @@ export function MonthCalendar({
         >
           <ChevronLeft className="h-5 w-5 text-foreground" />
         </button>
-        <span className="text-sm font-semibold text-foreground">
+        <span className="text-base font-bold text-foreground">
           {formatMonthYear(currentMonth)}
         </span>
         <button
@@ -140,9 +140,9 @@ export function MonthCalendar({
                 )
               }
               className={cn(
-                "relative flex flex-col items-center justify-center h-10 rounded-lg text-sm transition-colors",
+                "relative flex flex-col items-center justify-center h-11 rounded-xl text-sm font-medium transition-colors",
                 selected
-                  ? "bg-primary text-primary-foreground font-semibold"
+                  ? "bg-primary text-primary-foreground font-bold"
                   : "text-foreground hover:bg-secondary"
               )}
             >
@@ -166,17 +166,17 @@ export function MonthCalendar({
       </div>
 
       {activeTab === "reserve" && (
-        <div className="flex items-center justify-center gap-4 mt-3 text-xs text-muted-foreground">
+        <div className="flex items-center justify-center gap-5 mt-4 text-xs text-foreground/70">
           <div className="flex items-center gap-1.5">
-            <span className="h-2 w-2 rounded-full bg-primary" />
+            <span className="h-2.5 w-2.5 rounded-full bg-primary" />
             <span>Могу</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <span className="h-2 w-2 rounded-full bg-[#f5c518]" />
+            <span className="h-2.5 w-2.5 rounded-full bg-[#f5c518]" />
             <span>При необходимости</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <span className="h-2 w-2 rounded-full bg-destructive" />
+            <span className="h-2.5 w-2.5 rounded-full bg-destructive" />
             <span>Не могу</span>
           </div>
         </div>

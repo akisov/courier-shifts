@@ -28,17 +28,15 @@ export function TimeSelector({ label, value, onChange, placeholder = "" }: TimeS
 
   return (
     <div ref={ref} className="relative flex-1">
-      <span className="text-[10px] text-muted-foreground mb-0.5 block">{label}</span>
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
         className={cn(
-          "flex w-full items-center justify-between rounded-lg border border-input bg-background px-3 py-2.5 text-sm transition-colors",
+          "flex w-full items-center justify-between rounded-xl bg-secondary px-4 py-3.5 text-sm transition-colors",
           value ? "text-foreground" : "text-muted-foreground",
-          isOpen && "border-primary ring-1 ring-primary/20"
         )}
       >
-        <span>{value || placeholder}</span>
+        <span className="font-medium">{value || label}</span>
         {isOpen ? (
           <ChevronUp className="h-4 w-4 text-muted-foreground" />
         ) : (
@@ -46,7 +44,7 @@ export function TimeSelector({ label, value, onChange, placeholder = "" }: TimeS
         )}
       </button>
       {isOpen && (
-        <div className="absolute z-50 mt-1 w-full rounded-lg border border-border bg-background shadow-lg max-h-48 overflow-y-auto">
+        <div className="absolute z-50 mt-1 w-full rounded-xl border border-border bg-background shadow-lg max-h-52 overflow-y-auto">
           {TIME_OPTIONS.map((time) => (
             <button
               key={time}
@@ -56,8 +54,8 @@ export function TimeSelector({ label, value, onChange, placeholder = "" }: TimeS
                 setIsOpen(false)
               }}
               className={cn(
-                "w-full px-3 py-2 text-left text-sm hover:bg-secondary transition-colors",
-                value === time && "bg-primary/10 text-primary font-medium"
+                "w-full px-4 py-3 text-left text-sm hover:bg-secondary transition-colors",
+                value === time && "bg-primary/10 text-primary font-semibold"
               )}
             >
               {time}

@@ -83,10 +83,10 @@ export function PlanShiftModal({ isOpen, onClose, onSubmit }: PlanShiftModalProp
           </div>
 
           {/* Header */}
-          <div className="flex items-center justify-between px-5 pb-3">
-            <h2 className="text-base font-semibold text-foreground">Запланировать выход</h2>
-            <button onClick={() => { resetForm(); onClose() }} className="p-1 text-muted-foreground hover:text-foreground" aria-label="Закрыть">
-              <X className="h-5 w-5" />
+          <div className="flex items-center justify-between px-5 pb-4 pt-1">
+            <h2 className="text-xl font-bold text-foreground">Запланировать выход</h2>
+            <button onClick={() => { resetForm(); onClose() }} className="p-1 text-foreground hover:text-muted-foreground" aria-label="Закрыть">
+              <X className="h-6 w-6" />
             </button>
           </div>
 
@@ -94,23 +94,22 @@ export function PlanShiftModal({ isOpen, onClose, onSubmit }: PlanShiftModalProp
           <div className="flex-1 overflow-y-auto px-5 pb-4">
             {/* Date */}
             <div className="mb-5">
-              <label className="text-sm font-semibold text-foreground block mb-2">Дата</label>
+              <label className="text-base font-bold text-foreground block mb-2">Дата</label>
               <button
                 type="button"
                 onClick={() => setShowDatePicker(true)}
                 className={cn(
-                  "flex w-full items-center justify-between rounded-lg border border-input bg-background px-3 py-3 text-sm transition-colors",
-                  selectedDate ? "text-foreground" : "text-muted-foreground"
+                  "flex w-full flex-col rounded-xl bg-secondary px-4 py-3 text-sm transition-colors text-left",
                 )}
               >
-                <span className="text-[10px] text-muted-foreground absolute -mt-7">Выберите дату</span>
-                <span>{selectedDate ? formatDate(selectedDate) : "Выберите дату"}</span>
+                <span className="text-xs text-muted-foreground mb-0.5">Выберите дату</span>
+                {selectedDate && <span className="text-foreground font-medium">{formatDate(selectedDate)}</span>}
               </button>
             </div>
 
             {/* Time */}
             <div className="mb-5">
-              <label className="text-sm font-semibold text-foreground block mb-2">Время работы</label>
+              <label className="text-base font-bold text-foreground block mb-2">Время работы</label>
               <div className="flex gap-3">
                 <TimeSelector label="С" value={timeFrom} onChange={setTimeFrom} placeholder="С" />
                 <TimeSelector label="По" value={timeTo} onChange={setTimeTo} placeholder="По" />
@@ -120,7 +119,7 @@ export function PlanShiftModal({ isOpen, onClose, onSubmit }: PlanShiftModalProp
             {/* Repeat toggle */}
             <div className="mb-5">
               <div className="flex items-center justify-between">
-                <span className="text-sm font-semibold text-foreground">Повторять выход</span>
+                <span className="text-base font-bold text-foreground">Повторять выход</span>
                 <button
                   type="button"
                   onClick={() => setRepeat(!repeat)}
@@ -142,21 +141,22 @@ export function PlanShiftModal({ isOpen, onClose, onSubmit }: PlanShiftModalProp
 
             {/* Workplace */}
             <div className="mb-4">
-              <label className="text-sm font-semibold text-foreground block mb-2">Где буду работать</label>
-              <div className="flex flex-col gap-2">
-                {WORKPLACES.map((wp) => (
+              <label className="text-base font-bold text-foreground block mb-2">Где буду работать</label>
+              <div className="flex flex-col rounded-xl overflow-hidden border border-border">
+                {WORKPLACES.map((wp, idx) => (
                   <button
                     key={wp.id}
                     type="button"
                     onClick={() => setSelectedWorkplace(wp.id)}
                     className={cn(
-                      "flex items-center gap-3 rounded-xl border p-3 transition-all text-left",
-                      selectedWorkplace === wp.id
-                        ? "border-primary bg-primary/5"
-                        : "border-border bg-background"
+                      "flex items-center gap-3 p-3.5 transition-all text-left",
+                      idx > 0 && "border-t border-border",
+                      selectedWorkplace === wp.id ? "bg-primary/5" : "bg-background"
                     )}
                   >
-                    <CalendarDays className="h-4 w-4 text-muted-foreground shrink-0" />
+                    <div className="h-9 w-9 rounded-lg bg-secondary flex items-center justify-center shrink-0">
+                      <CalendarDays className="h-4 w-4 text-muted-foreground" />
+                    </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-foreground">{wp.code}</p>
                       <p className="text-xs text-muted-foreground truncate">{wp.address}</p>
