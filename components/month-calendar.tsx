@@ -3,10 +3,11 @@
 import { useState, useMemo } from "react"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 import { cn } from "@/lib/utils"
-import type { ShiftEntry, PlannedReserve } from "@/lib/types"
+import type { ShiftEntry, PlannedShift, PlannedReserve } from "@/lib/types"
 
 interface MonthCalendarProps {
   shifts: ShiftEntry[]
+  plannedShifts: PlannedShift[]
   reserves: PlannedReserve[]
   activeTab: "shifts" | "reserve"
   selectedDate: Date | null
@@ -34,6 +35,7 @@ function formatMonthYear(date: Date) {
 
 export function MonthCalendar({
   shifts,
+  plannedShifts,
   reserves,
   activeTab,
   selectedDate,
@@ -47,8 +49,9 @@ export function MonthCalendar({
   const shiftDates = useMemo(() => {
     const set = new Set<string>()
     shifts.forEach((s) => set.add(s.date))
+    plannedShifts.forEach((s) => set.add(s.date))
     return set
-  }, [shifts])
+  }, [shifts, plannedShifts])
 
   const reserveDates = useMemo(() => {
     const map = new Map<string, string>()

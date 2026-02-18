@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation"
 import { AppHeader } from "@/components/app-header"
 import { TabSwitcher } from "@/components/tab-switcher"
 import { MonthCalendar } from "@/components/month-calendar"
-import { ShiftList } from "@/components/shift-list"
 import { ReserveInfo } from "@/components/reserve-info"
 import { PlanShiftModal } from "@/components/plan-shift-modal"
 import { PlanReserveModal } from "@/components/plan-reserve-modal"
@@ -50,6 +49,7 @@ export default function HomePage() {
 
       <MonthCalendar
         shifts={shifts}
+        plannedShifts={plannedShifts}
         reserves={plannedReserves}
         activeTab={activeTab}
         selectedDate={selectedDate}
@@ -60,7 +60,7 @@ export default function HomePage() {
 
       <div className="flex-1 overflow-y-auto mt-3">
         {activeTab === "shifts" ? (
-          <ShiftList shifts={shifts} />
+          <PlannedShiftList plannedShifts={plannedShifts} />
         ) : (
           <ReserveList reserves={plannedReserves} />
         )}
@@ -96,6 +96,51 @@ export default function HomePage() {
           addPlannedReserve(data)
         }}
       />
+    </div>
+  )
+}
+
+function PlannedShiftList({ plannedShifts }: { plannedShifts: { id: string; date: string; timeFrom: string; timeTo: string; workplaceId: string }[] }) {
+  if (plannedShifts.length === 0) {
+    return (
+      <div className="px-4 py-8 text-center text-muted-foreground text-sm">
+        Нет запланированных выходов
+      </div>
+    )
+  }
+
+  const grouped = plannedShifts.reduce<Record<string, typeof plannedShifts>>((acc, s) => {
+    if (!acc[s.date]) acc[s.date] = []
+    acc[s.date].push(s)
+    return acc
+  }, {})
+
+  const sortedDates = Object.keys(grouped).sort()
+
+  const months = ["янв", "фев", "мар", "апр", "мая", "июн", "июл", "авг", "сен", "окт", "ноя", "дек"]
+  const weekdays = ["Вс", "Пн", "Вт", "Ср", "Чт", "Пт", "Сб"]
+
+  return (
+    <div className="px-4 pb-24">
+      <h3 className="text-sm font-semibold text-foreground mb-3">Мои выходы</h3>
+      {sortedDates.map((date) => {
+        const d = new Date(date + "T00:00:00")
+        const header = `${d.getDate()} ${months[d.getMonth()]}, ${weekdays[d.getDay()]}`
+        return (
+          <div key={date} className="mb-4">
+            <p className="text-xs font-semibold text-foreground mb-2">{header}</p>
+            <div className="flex flex-col gap-2">
+              {grouped[date].map((shift, idx) => (
+                <div key={shift.id} className="bg-secondary rounded-xl p-3">
+                  <span className="text-sm font-medium text-foreground">
+                    {idx + 1}. {shift.timeFrom} — {shift.timeTo}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )
+      })}
     </div>
   )
 }
