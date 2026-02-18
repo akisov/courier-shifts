@@ -1,12 +1,23 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { X } from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { ShiftStatus, LocationType } from "@/lib/types"
 import { TimeSelector } from "./time-selector"
 import { DayOfWeekPicker } from "./day-of-week-picker"
 import { DatePickerModal } from "./date-picker-modal"
+
+interface EditData {
+  id: string
+  date: string
+  timeFrom: string
+  timeTo: string
+  status: ShiftStatus
+  location: LocationType
+  repeat: boolean
+  repeatDays?: number[]
+}
 
 interface PlanReserveModalProps {
   isOpen: boolean
@@ -20,6 +31,8 @@ interface PlanReserveModalProps {
     repeat: boolean
     repeatDays: number[]
   }) => void
+  editData?: EditData
+  onDelete?: (id: string) => void
 }
 
 function formatDate(date: Date | null) {
@@ -37,6 +50,11 @@ function toISODate(date: Date) {
   return `${y}-${m}-${d}`
 }
 
+function parseISODate(dateStr: string): Date {
+  const [y, m, d] = dateStr.split("-").map(Number)
+  return new Date(y, m - 1, d)
+}
+
 const STATUS_OPTIONS: { value: ShiftStatus; label: string }[] = [
   { value: "can", label: "Могу" },
   { value: "if_needed", label: "При необходимости" },
@@ -48,7 +66,7 @@ const LOCATION_OPTIONS: { value: LocationType; label: string }[] = [
   { value: "whole_city", label: "По всему городу" },
 ]
 
-export function PlanReserveModal({ isOpen, onClose, onSubmit }: PlanReserveModalProps) {
+export function PlanReserveModal({ isOpen, onClose, onSubmit, editData, onDelete }: PlanReserveModalProps) {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null)
   const [timeFrom, setTimeFrom] = useState("")
   const [timeTo, setTimeTo] = useState("")
@@ -57,6 +75,29 @@ export function PlanReserveModal({ isOpen, onClose, onSubmit }: PlanReserveModal
   const [repeat, setRepeat] = useState(false)
   const [repeatDays, setRepeatDays] = useState<number[]>([])
   const [showDatePicker, setShowDatePicker] = useState(false)
+
+  const isEditMode = !!editData
+
+  useEffect(() => {
+    if (isOpen && editData) {
+      setSelectedDate(parseISODate(editData.date))
+      setTimeFrom(editData.timeFrom)
+      setTimeTo(editData.timeTo)
+      setStatus(editData.status)
+      setLocation(editData.location)
+      setRepeat(editData.repeat)
+      setRepeatDays(editData.repeatDays || [])
+    }
+    if (!isOpen) {
+      setSelectedDate(null)
+      setTimeFrom("")
+      setTimeTo("")
+      setStatus(null)
+      setLocation(null)
+      setRepeat(false)
+      setRepeatDays([])
+    }
+  }, [isOpen]) // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!isOpen) return null
 
@@ -73,24 +114,13 @@ export function PlanReserveModal({ isOpen, onClose, onSubmit }: PlanReserveModal
       repeat,
       repeatDays,
     })
-    resetForm()
     onClose()
-  }
-
-  const resetForm = () => {
-    setSelectedDate(null)
-    setTimeFrom("")
-    setTimeTo("")
-    setStatus(null)
-    setLocation(null)
-    setRepeat(false)
-    setRepeatDays([])
   }
 
   return (
     <>
       <div className="fixed inset-0 z-40 flex items-end justify-center">
-        <div className="absolute inset-0 bg-foreground/50" onClick={() => { resetForm(); onClose() }} />
+        <div className="absolute inset-0 bg-foreground/50" onClick={onClose} />
         <div className="relative w-full max-w-md bg-background rounded-t-2xl shadow-2xl animate-in slide-in-from-bottom duration-300 max-h-[90vh] flex flex-col">
           {/* Drag handle */}
           <div className="flex justify-center pt-3 pb-1">
@@ -99,8 +129,10 @@ export function PlanReserveModal({ isOpen, onClose, onSubmit }: PlanReserveModal
 
           {/* Header */}
           <div className="flex items-center justify-between px-5 pb-4 pt-1">
-            <h2 className="text-xl font-bold text-foreground">Запланировать резерв</h2>
-            <button onClick={() => { resetForm(); onClose() }} className="p-1 text-foreground hover:text-muted-foreground" aria-label="Закрыть">
+            <h2 className="text-xl font-bold text-foreground">
+              {isEditMode ? "Редактировать резерв" : "Запланировать резерв"}
+            </h2>
+            <button onClick={onClose} className="p-1 text-foreground hover:text-muted-foreground" aria-label="Закрыть">
               <X className="h-6 w-6" />
             </button>
           </div>
@@ -201,8 +233,8 @@ export function PlanReserveModal({ isOpen, onClose, onSubmit }: PlanReserveModal
             </div>
           </div>
 
-          {/* Submit button */}
-          <div className="px-5 pb-6 pt-2">
+          {/* Buttons */}
+          <div className="px-5 pb-6 pt-2 flex flex-col gap-2">
             <button
               onClick={handleSubmit}
               disabled={!isValid}
@@ -213,8 +245,17 @@ export function PlanReserveModal({ isOpen, onClose, onSubmit }: PlanReserveModal
                   : "bg-muted text-muted-foreground"
               )}
             >
-              Запланировать
+              {isEditMode ? "Сохранить изменения" : "Запланировать"}
             </button>
+
+            {isEditMode && onDelete && editData && (
+              <button
+                onClick={() => { onDelete(editData.id); onClose() }}
+                className="w-full rounded-xl py-3.5 text-sm font-semibold text-destructive border border-destructive/30 active:scale-[0.98] transition-all"
+              >
+                Удалить резерв
+              </button>
+            )}
           </div>
         </div>
       </div>

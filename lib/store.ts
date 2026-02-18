@@ -105,12 +105,61 @@ export function useAppStore() {
     }
   }, [])
 
+  const updatePlannedShift = useCallback(async (id: string, shift: Omit<PlannedShift, "id">) => {
+    const { error } = await supabase.from("planned_shifts").update({
+      date: shift.date,
+      time_from: shift.timeFrom,
+      time_to: shift.timeTo,
+      workplace_id: shift.workplaceId,
+      repeat: shift.repeat,
+      repeat_days: shift.repeatDays,
+    }).eq("id", id)
+
+    if (!error) {
+      setPlannedShifts(prev => prev.map(s => s.id === id ? { ...shift, id } : s))
+    }
+  }, [])
+
+  const deletePlannedShift = useCallback(async (id: string) => {
+    const { error } = await supabase.from("planned_shifts").delete().eq("id", id)
+    if (!error) {
+      setPlannedShifts(prev => prev.filter(s => s.id !== id))
+    }
+  }, [])
+
+  const updatePlannedReserve = useCallback(async (id: string, reserve: Omit<PlannedReserve, "id">) => {
+    const { error } = await supabase.from("planned_reserves").update({
+      date: reserve.date,
+      time_from: reserve.timeFrom,
+      time_to: reserve.timeTo,
+      status: reserve.status,
+      location: reserve.location,
+      repeat: reserve.repeat,
+      repeat_days: reserve.repeatDays,
+    }).eq("id", id)
+
+    if (!error) {
+      setPlannedReserves(prev => prev.map(r => r.id === id ? { ...reserve, id } : r))
+    }
+  }, [])
+
+  const deletePlannedReserve = useCallback(async (id: string) => {
+    const { error } = await supabase.from("planned_reserves").delete().eq("id", id)
+    if (!error) {
+      setPlannedReserves(prev => prev.filter(r => r.id !== id))
+    }
+  }, [])
+
   return {
     shifts: [],
     plannedShifts,
     plannedReserves,
     addPlannedShift,
     addPlannedReserve,
+    updatePlannedShift,
+    deletePlannedShift,
+    updatePlannedReserve,
+    deletePlannedReserve,
     loading,
   }
 }

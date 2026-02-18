@@ -11,6 +11,7 @@ import { PlanReserveModal } from "@/components/plan-reserve-modal"
 import { useAppStore } from "@/lib/store"
 import { supabase } from "@/lib/supabase"
 import { WORKPLACES } from "@/lib/types"
+import type { PlannedShift, PlannedReserve } from "@/lib/types"
 import { Clock, MapPin, Pencil } from "lucide-react"
 
 export default function HomePage() {
@@ -19,6 +20,8 @@ export default function HomePage() {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null)
   const [showShiftModal, setShowShiftModal] = useState(false)
   const [showReserveModal, setShowReserveModal] = useState(false)
+  const [editingShift, setEditingShift] = useState<PlannedShift | null>(null)
+  const [editingReserve, setEditingReserve] = useState<PlannedReserve | null>(null)
   const [authChecked, setAuthChecked] = useState(false)
 
   useEffect(() => {
@@ -32,7 +35,18 @@ export default function HomePage() {
     })()
   }, [router])
 
-  const { shifts, plannedShifts, plannedReserves, addPlannedShift, addPlannedReserve, loading } = useAppStore()
+  const {
+    shifts,
+    plannedShifts,
+    plannedReserves,
+    addPlannedShift,
+    addPlannedReserve,
+    updatePlannedShift,
+    deletePlannedShift,
+    updatePlannedReserve,
+    deletePlannedReserve,
+    loading,
+  } = useAppStore()
 
   if (!authChecked || loading) {
     return (
@@ -62,9 +76,15 @@ export default function HomePage() {
 
       <div className="flex-1 overflow-y-auto mt-3">
         {activeTab === "shifts" ? (
-          <PlannedShiftList plannedShifts={plannedShifts} />
+          <PlannedShiftList
+            plannedShifts={plannedShifts}
+            onEdit={(shift) => setEditingShift(shift)}
+          />
         ) : (
-          <ReserveList reserves={plannedReserves} />
+          <ReserveList
+            reserves={plannedReserves}
+            onEdit={(reserve) => setEditingReserve(reserve)}
+          />
         )}
       </div>
 
@@ -83,20 +103,40 @@ export default function HomePage() {
         </button>
       </div>
 
+      {/* New shift modal */}
       <PlanShiftModal
         isOpen={showShiftModal}
         onClose={() => setShowShiftModal(false)}
-        onSubmit={(data) => {
-          addPlannedShift(data)
-        }}
+        onSubmit={(data) => addPlannedShift(data)}
       />
 
+      {/* Edit shift modal */}
+      <PlanShiftModal
+        isOpen={!!editingShift}
+        onClose={() => setEditingShift(null)}
+        editData={editingShift ?? undefined}
+        onSubmit={(data) => {
+          if (editingShift) updatePlannedShift(editingShift.id, data)
+        }}
+        onDelete={(id) => deletePlannedShift(id)}
+      />
+
+      {/* New reserve modal */}
       <PlanReserveModal
         isOpen={showReserveModal}
         onClose={() => setShowReserveModal(false)}
+        onSubmit={(data) => addPlannedReserve(data)}
+      />
+
+      {/* Edit reserve modal */}
+      <PlanReserveModal
+        isOpen={!!editingReserve}
+        onClose={() => setEditingReserve(null)}
+        editData={editingReserve ?? undefined}
         onSubmit={(data) => {
-          addPlannedReserve(data)
+          if (editingReserve) updatePlannedReserve(editingReserve.id, data)
         }}
+        onDelete={(id) => deletePlannedReserve(id)}
       />
     </div>
   )
@@ -112,7 +152,13 @@ function calcDuration(from: string, to: string): string {
   return m > 0 ? `${h}ч ${m}м` : `${h} ч`
 }
 
-function PlannedShiftList({ plannedShifts }: { plannedShifts: { id: string; date: string; timeFrom: string; timeTo: string; workplaceId: string }[] }) {
+function PlannedShiftList({
+  plannedShifts,
+  onEdit,
+}: {
+  plannedShifts: PlannedShift[]
+  onEdit: (shift: PlannedShift) => void
+}) {
   if (plannedShifts.length === 0) {
     return (
       <div className="px-4 py-8 text-center text-muted-foreground text-sm">
@@ -121,7 +167,7 @@ function PlannedShiftList({ plannedShifts }: { plannedShifts: { id: string; date
     )
   }
 
-  const grouped = plannedShifts.reduce<Record<string, typeof plannedShifts>>((acc, s) => {
+  const grouped = plannedShifts.reduce<Record<string, PlannedShift[]>>((acc, s) => {
     if (!acc[s.date]) acc[s.date] = []
     acc[s.date].push(s)
     return acc
@@ -137,13 +183,12 @@ function PlannedShiftList({ plannedShifts }: { plannedShifts: { id: string; date
       {sortedDates.map((date) => {
         const d = new Date(date + "T00:00:00")
         const header = `${d.getDate()} ${months[d.getMonth()]}, ${weekdays[d.getDay()]}`
-        const wp = WORKPLACES.find(w => w.id === grouped[date][0]?.workplaceId)
         return (
           <div key={date} className="mb-1">
             <p className="text-base font-bold text-foreground py-2">{header}</p>
             <div className="flex flex-col">
               {grouped[date].map((shift, idx) => {
-                const workplace = WORKPLACES.find(w => w.id === shift.workplaceId) ?? wp
+                const workplace = WORKPLACES.find(w => w.id === shift.workplaceId)
                 const duration = calcDuration(shift.timeFrom, shift.timeTo)
                 return (
                   <div key={shift.id} className="flex items-center justify-between py-3 border-b border-border last:border-0">
@@ -164,7 +209,11 @@ function PlannedShiftList({ plannedShifts }: { plannedShifts: { id: string; date
                         </div>
                       )}
                     </div>
-                    <button className="ml-3 h-9 w-9 flex items-center justify-center rounded-xl bg-secondary text-muted-foreground hover:text-foreground" aria-label="Редактировать">
+                    <button
+                      onClick={() => onEdit(shift)}
+                      className="ml-3 h-9 w-9 flex items-center justify-center rounded-xl bg-secondary text-muted-foreground hover:text-foreground transition-colors"
+                      aria-label="Редактировать"
+                    >
                       <Pencil className="h-4 w-4" />
                     </button>
                   </div>
@@ -178,7 +227,13 @@ function PlannedShiftList({ plannedShifts }: { plannedShifts: { id: string; date
   )
 }
 
-function ReserveList({ reserves }: { reserves: { id: string; date: string; timeFrom: string; timeTo: string; status: string; location: string }[] }) {
+function ReserveList({
+  reserves,
+  onEdit,
+}: {
+  reserves: PlannedReserve[]
+  onEdit: (reserve: PlannedReserve) => void
+}) {
   if (reserves.length === 0) {
     return (
       <div className="px-4 py-8 text-center text-muted-foreground text-sm">
@@ -218,9 +273,18 @@ function ReserveList({ reserves }: { reserves: { id: string; date: string; timeF
                 <span className="text-sm font-medium text-foreground">
                   {d}.{m} | {reserve.timeFrom} - {reserve.timeTo}
                 </span>
-                <span className={`text-xs px-2 py-0.5 rounded-md font-medium ${statusColors[reserve.status] || ""}`}>
-                  {statusLabels[reserve.status] || reserve.status}
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className={`text-xs px-2 py-0.5 rounded-md font-medium ${statusColors[reserve.status] || ""}`}>
+                    {statusLabels[reserve.status] || reserve.status}
+                  </span>
+                  <button
+                    onClick={() => onEdit(reserve)}
+                    className="h-7 w-7 flex items-center justify-center rounded-lg bg-background text-muted-foreground hover:text-foreground transition-colors"
+                    aria-label="Редактировать"
+                  >
+                    <Pencil className="h-3.5 w-3.5" />
+                  </button>
+                </div>
               </div>
               <p className="text-xs text-muted-foreground">
                 {locationLabels[reserve.location] || reserve.location}

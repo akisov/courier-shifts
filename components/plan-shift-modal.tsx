@@ -1,12 +1,22 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { X, CalendarDays } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { WORKPLACES } from "@/lib/types"
 import { TimeSelector } from "./time-selector"
 import { DayOfWeekPicker } from "./day-of-week-picker"
 import { DatePickerModal } from "./date-picker-modal"
+
+interface EditData {
+  id: string
+  date: string
+  timeFrom: string
+  timeTo: string
+  workplaceId: string
+  repeat: boolean
+  repeatDays?: number[]
+}
 
 interface PlanShiftModalProps {
   isOpen: boolean
@@ -19,6 +29,8 @@ interface PlanShiftModalProps {
     repeat: boolean
     repeatDays: number[]
   }) => void
+  editData?: EditData
+  onDelete?: (id: string) => void
 }
 
 function formatDate(date: Date | null) {
@@ -36,7 +48,12 @@ function toISODate(date: Date) {
   return `${y}-${m}-${d}`
 }
 
-export function PlanShiftModal({ isOpen, onClose, onSubmit }: PlanShiftModalProps) {
+function parseISODate(dateStr: string): Date {
+  const [y, m, d] = dateStr.split("-").map(Number)
+  return new Date(y, m - 1, d)
+}
+
+export function PlanShiftModal({ isOpen, onClose, onSubmit, editData, onDelete }: PlanShiftModalProps) {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null)
   const [timeFrom, setTimeFrom] = useState("")
   const [timeTo, setTimeTo] = useState("")
@@ -44,6 +61,27 @@ export function PlanShiftModal({ isOpen, onClose, onSubmit }: PlanShiftModalProp
   const [repeatDays, setRepeatDays] = useState<number[]>([])
   const [selectedWorkplace, setSelectedWorkplace] = useState("")
   const [showDatePicker, setShowDatePicker] = useState(false)
+
+  const isEditMode = !!editData
+
+  useEffect(() => {
+    if (isOpen && editData) {
+      setSelectedDate(parseISODate(editData.date))
+      setTimeFrom(editData.timeFrom)
+      setTimeTo(editData.timeTo)
+      setSelectedWorkplace(editData.workplaceId)
+      setRepeat(editData.repeat)
+      setRepeatDays(editData.repeatDays || [])
+    }
+    if (!isOpen) {
+      setSelectedDate(null)
+      setTimeFrom("")
+      setTimeTo("")
+      setRepeat(false)
+      setRepeatDays([])
+      setSelectedWorkplace("")
+    }
+  }, [isOpen]) // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!isOpen) return null
 
@@ -59,23 +97,17 @@ export function PlanShiftModal({ isOpen, onClose, onSubmit }: PlanShiftModalProp
       repeat,
       repeatDays,
     })
-    resetForm()
     onClose()
   }
 
-  const resetForm = () => {
-    setSelectedDate(null)
-    setTimeFrom("")
-    setTimeTo("")
-    setRepeat(false)
-    setRepeatDays([])
-    setSelectedWorkplace("")
+  const handleClose = () => {
+    onClose()
   }
 
   return (
     <>
       <div className="fixed inset-0 z-40 flex items-end justify-center">
-        <div className="absolute inset-0 bg-foreground/50" onClick={() => { resetForm(); onClose() }} />
+        <div className="absolute inset-0 bg-foreground/50" onClick={handleClose} />
         <div className="relative w-full max-w-md bg-background rounded-t-2xl shadow-2xl animate-in slide-in-from-bottom duration-300 max-h-[90vh] flex flex-col">
           {/* Drag handle */}
           <div className="flex justify-center pt-3 pb-1">
@@ -84,8 +116,10 @@ export function PlanShiftModal({ isOpen, onClose, onSubmit }: PlanShiftModalProp
 
           {/* Header */}
           <div className="flex items-center justify-between px-5 pb-4 pt-1">
-            <h2 className="text-xl font-bold text-foreground">Запланировать выход</h2>
-            <button onClick={() => { resetForm(); onClose() }} className="p-1 text-foreground hover:text-muted-foreground" aria-label="Закрыть">
+            <h2 className="text-xl font-bold text-foreground">
+              {isEditMode ? "Редактировать выход" : "Запланировать выход"}
+            </h2>
+            <button onClick={handleClose} className="p-1 text-foreground hover:text-muted-foreground" aria-label="Закрыть">
               <X className="h-6 w-6" />
             </button>
           </div>
@@ -98,9 +132,7 @@ export function PlanShiftModal({ isOpen, onClose, onSubmit }: PlanShiftModalProp
               <button
                 type="button"
                 onClick={() => setShowDatePicker(true)}
-                className={cn(
-                  "flex w-full flex-col rounded-xl bg-secondary px-4 py-3 text-sm transition-colors text-left",
-                )}
+                className="flex w-full flex-col rounded-xl bg-secondary px-4 py-3 text-sm transition-colors text-left"
               >
                 <span className="text-xs text-muted-foreground mb-0.5">Выберите дату</span>
                 {selectedDate && <span className="text-foreground font-medium">{formatDate(selectedDate)}</span>}
@@ -164,9 +196,7 @@ export function PlanShiftModal({ isOpen, onClose, onSubmit }: PlanShiftModalProp
                     <div
                       className={cn(
                         "h-5 w-5 rounded-full border-2 flex items-center justify-center shrink-0",
-                        selectedWorkplace === wp.id
-                          ? "border-primary"
-                          : "border-border"
+                        selectedWorkplace === wp.id ? "border-primary" : "border-border"
                       )}
                     >
                       {selectedWorkplace === wp.id && (
@@ -179,8 +209,8 @@ export function PlanShiftModal({ isOpen, onClose, onSubmit }: PlanShiftModalProp
             </div>
           </div>
 
-          {/* Submit button */}
-          <div className="px-5 pb-6 pt-2">
+          {/* Buttons */}
+          <div className="px-5 pb-6 pt-2 flex flex-col gap-2">
             <button
               onClick={handleSubmit}
               disabled={!isValid}
@@ -191,8 +221,17 @@ export function PlanShiftModal({ isOpen, onClose, onSubmit }: PlanShiftModalProp
                   : "bg-muted text-muted-foreground"
               )}
             >
-              Запланировать
+              {isEditMode ? "Сохранить изменения" : "Запланировать"}
             </button>
+
+            {isEditMode && onDelete && editData && (
+              <button
+                onClick={() => { onDelete(editData.id); onClose() }}
+                className="w-full rounded-xl py-3.5 text-sm font-semibold text-destructive border border-destructive/30 active:scale-[0.98] transition-all"
+              >
+                Удалить выход
+              </button>
+            )}
           </div>
         </div>
       </div>
