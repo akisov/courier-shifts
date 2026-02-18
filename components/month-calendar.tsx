@@ -146,22 +146,18 @@ export function MonthCalendar({
                 "relative flex flex-col items-center justify-center h-11 rounded-xl text-sm font-medium transition-colors",
                 selected
                   ? "bg-primary text-primary-foreground font-bold"
-                  : "text-foreground hover:bg-secondary"
+                  : reserveStatus === "can"
+                    ? "bg-primary/15 text-primary font-semibold"
+                    : reserveStatus === "if_needed"
+                      ? "bg-[#f5c518]/20 text-[#b8940e] font-semibold"
+                      : reserveStatus === "cannot"
+                        ? "bg-destructive/15 text-destructive font-semibold"
+                        : "text-foreground hover:bg-secondary"
               )}
             >
               <span>{day}</span>
               {hasShiftDay && !selected && (
                 <span className="absolute bottom-0.5 h-1.5 w-1.5 rounded-full bg-primary" />
-              )}
-              {reserveStatus && !selected && (
-                <span
-                  className={cn(
-                    "absolute bottom-0.5 h-1.5 w-1.5 rounded-full",
-                    reserveStatus === "can" && "bg-primary",
-                    reserveStatus === "if_needed" && "bg-[#f5c518]",
-                    reserveStatus === "cannot" && "bg-destructive"
-                  )}
-                />
               )}
             </button>
           )

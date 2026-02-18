@@ -98,10 +98,10 @@ export function PlanReserveModal({ isOpen, onClose, onSubmit }: PlanReserveModal
           </div>
 
           {/* Header */}
-          <div className="flex items-center justify-between px-5 pb-3">
-            <h2 className="text-base font-semibold text-foreground">Запланировать резерв</h2>
-            <button onClick={() => { resetForm(); onClose() }} className="p-1 text-muted-foreground hover:text-foreground" aria-label="Закрыть">
-              <X className="h-5 w-5" />
+          <div className="flex items-center justify-between px-5 pb-4 pt-1">
+            <h2 className="text-xl font-bold text-foreground">Запланировать резерв</h2>
+            <button onClick={() => { resetForm(); onClose() }} className="p-1 text-foreground hover:text-muted-foreground" aria-label="Закрыть">
+              <X className="h-6 w-6" />
             </button>
           </div>
 
@@ -109,25 +109,20 @@ export function PlanReserveModal({ isOpen, onClose, onSubmit }: PlanReserveModal
           <div className="flex-1 overflow-y-auto px-5 pb-4">
             {/* Date */}
             <div className="mb-5">
-              <label className="text-sm font-semibold text-foreground block mb-2">Дата</label>
+              <label className="text-base font-bold text-foreground block mb-2">Дата</label>
               <button
                 type="button"
                 onClick={() => setShowDatePicker(true)}
-                className={cn(
-                  "flex w-full items-center justify-between rounded-lg border border-input bg-background px-3 py-3 text-sm transition-colors",
-                  selectedDate ? "text-foreground" : "text-muted-foreground"
-                )}
+                className="flex w-full flex-col rounded-xl bg-secondary px-4 py-3 text-sm transition-colors text-left"
               >
-                <div className="flex flex-col items-start">
-                  <span className="text-[10px] text-muted-foreground">Выберите дату</span>
-                  <span className="text-sm">{selectedDate ? formatDate(selectedDate) : "Выберите дату"}</span>
-                </div>
+                <span className="text-xs text-muted-foreground mb-0.5">Выберите дату</span>
+                {selectedDate && <span className="text-foreground font-medium">{formatDate(selectedDate)}</span>}
               </button>
             </div>
 
             {/* Time */}
             <div className="mb-5">
-              <label className="text-sm font-semibold text-foreground block mb-2">Время работы</label>
+              <label className="text-base font-bold text-foreground block mb-2">Время работы</label>
               <div className="flex gap-3">
                 <TimeSelector label="С" value={timeFrom} onChange={setTimeFrom} placeholder="С" />
                 <TimeSelector label="По" value={timeTo} onChange={setTimeTo} placeholder="По" />
@@ -136,7 +131,7 @@ export function PlanReserveModal({ isOpen, onClose, onSubmit }: PlanReserveModal
 
             {/* Status */}
             <div className="mb-5">
-              <label className="text-sm font-semibold text-foreground block mb-2">Статус</label>
+              <label className="text-base font-bold text-foreground block mb-2">Статус</label>
               <div className="flex flex-wrap gap-2">
                 {STATUS_OPTIONS.map((option) => (
                   <button
@@ -162,7 +157,7 @@ export function PlanReserveModal({ isOpen, onClose, onSubmit }: PlanReserveModal
 
             {/* Location */}
             <div className="mb-5">
-              <label className="text-sm font-semibold text-foreground block mb-2">Локация</label>
+              <label className="text-base font-bold text-foreground block mb-2">Локация</label>
               <div className="flex flex-wrap gap-2">
                 {LOCATION_OPTIONS.map((option) => (
                   <button
@@ -185,7 +180,7 @@ export function PlanReserveModal({ isOpen, onClose, onSubmit }: PlanReserveModal
             {/* Repeat toggle */}
             <div className="mb-4">
               <div className="flex items-center justify-between">
-                <span className="text-sm font-semibold text-foreground">Повторять резерв</span>
+                <span className="text-base font-bold text-foreground">Повторять резерв</span>
                 <button
                   type="button"
                   onClick={() => setRepeat(!repeat)}

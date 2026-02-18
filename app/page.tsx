@@ -10,6 +10,8 @@ import { PlanShiftModal } from "@/components/plan-shift-modal"
 import { PlanReserveModal } from "@/components/plan-reserve-modal"
 import { useAppStore } from "@/lib/store"
 import { supabase } from "@/lib/supabase"
+import { WORKPLACES } from "@/lib/types"
+import { Clock, MapPin, Pencil } from "lucide-react"
 
 export default function HomePage() {
   const router = useRouter()
@@ -100,6 +102,16 @@ export default function HomePage() {
   )
 }
 
+function calcDuration(from: string, to: string): string {
+  const [fh, fm] = from.split(":").map(Number)
+  const [th, tm] = to.split(":").map(Number)
+  let mins = (th * 60 + tm) - (fh * 60 + fm)
+  if (mins < 0) mins += 24 * 60
+  const h = Math.floor(mins / 60)
+  const m = mins % 60
+  return m > 0 ? `${h}ч ${m}м` : `${h} ч`
+}
+
 function PlannedShiftList({ plannedShifts }: { plannedShifts: { id: string; date: string; timeFrom: string; timeTo: string; workplaceId: string }[] }) {
   if (plannedShifts.length === 0) {
     return (
@@ -116,27 +128,48 @@ function PlannedShiftList({ plannedShifts }: { plannedShifts: { id: string; date
   }, {})
 
   const sortedDates = Object.keys(grouped).sort()
-
   const months = ["янв", "фев", "мар", "апр", "мая", "июн", "июл", "авг", "сен", "окт", "ноя", "дек"]
   const weekdays = ["Вс", "Пн", "Вт", "Ср", "Чт", "Пт", "Сб"]
 
   return (
     <div className="px-4 pb-24">
-      <h3 className="text-sm font-semibold text-foreground mb-3">Мои выходы</h3>
+      <h3 className="text-base font-bold text-foreground mb-3">Мои выходы</h3>
       {sortedDates.map((date) => {
         const d = new Date(date + "T00:00:00")
         const header = `${d.getDate()} ${months[d.getMonth()]}, ${weekdays[d.getDay()]}`
+        const wp = WORKPLACES.find(w => w.id === grouped[date][0]?.workplaceId)
         return (
-          <div key={date} className="mb-4">
-            <p className="text-xs font-semibold text-foreground mb-2">{header}</p>
-            <div className="flex flex-col gap-2">
-              {grouped[date].map((shift, idx) => (
-                <div key={shift.id} className="bg-secondary rounded-xl p-3">
-                  <span className="text-sm font-medium text-foreground">
-                    {idx + 1}. {shift.timeFrom} — {shift.timeTo}
-                  </span>
-                </div>
-              ))}
+          <div key={date} className="mb-1">
+            <p className="text-base font-bold text-foreground py-2">{header}</p>
+            <div className="flex flex-col">
+              {grouped[date].map((shift, idx) => {
+                const workplace = WORKPLACES.find(w => w.id === shift.workplaceId) ?? wp
+                const duration = calcDuration(shift.timeFrom, shift.timeTo)
+                return (
+                  <div key={shift.id} className="flex items-center justify-between py-3 border-b border-border last:border-0">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-sm font-medium text-foreground">
+                          {idx + 1}. {shift.timeFrom} - {shift.timeTo}
+                        </span>
+                        <span className="flex items-center gap-1 text-xs font-semibold text-primary bg-primary/10 px-2 py-0.5 rounded-full">
+                          <Clock className="h-3 w-3" />
+                          {duration}
+                        </span>
+                      </div>
+                      {workplace && (
+                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                          <MapPin className="h-3 w-3" />
+                          {workplace.address}
+                        </div>
+                      )}
+                    </div>
+                    <button className="ml-3 h-9 w-9 flex items-center justify-center rounded-xl bg-secondary text-muted-foreground hover:text-foreground" aria-label="Редактировать">
+                      <Pencil className="h-4 w-4" />
+                    </button>
+                  </div>
+                )
+              })}
             </div>
           </div>
         )
