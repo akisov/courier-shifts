@@ -207,18 +207,25 @@ export default function AdminPage() {
   const selectedShifts = selectedDateStr ? shifts.filter(s => s.date === selectedDateStr) : []
   const selectedReserves = selectedDateStr ? reserves.filter(r => r.date === selectedDateStr) : []
 
-  // List data
-  const shiftsByDate = useMemo(() => shifts.reduce<Record<string, AdminShift[]>>((acc, s) => {
+  // Month prefix for filtering
+  const monthPrefix = `${currentMonth.getFullYear()}-${(currentMonth.getMonth() + 1).toString().padStart(2, "0")}`
+
+  // Filtered by current month
+  const monthShifts = useMemo(() => shifts.filter(s => s.date.startsWith(monthPrefix)), [shifts, monthPrefix])
+  const monthReserves = useMemo(() => reserves.filter(r => r.date.startsWith(monthPrefix)), [reserves, monthPrefix])
+
+  // List data (filtered by month)
+  const shiftsByDate = useMemo(() => monthShifts.reduce<Record<string, AdminShift[]>>((acc, s) => {
     if (!acc[s.date]) acc[s.date] = []
     acc[s.date].push(s)
     return acc
-  }, {}), [shifts])
+  }, {}), [monthShifts])
 
-  const reservesByDate = useMemo(() => reserves.reduce<Record<string, AdminReserve[]>>((acc, r) => {
+  const reservesByDate = useMemo(() => monthReserves.reduce<Record<string, AdminReserve[]>>((acc, r) => {
     if (!acc[r.date]) acc[r.date] = []
     acc[r.date].push(r)
     return acc
-  }, {}), [reserves])
+  }, {}), [monthReserves])
 
   const shiftDates = Object.keys(shiftsByDate).sort()
   const reserveDates = Object.keys(reservesByDate).sort()
@@ -277,18 +284,37 @@ export default function AdminPage() {
         </button>
       </div>
 
-      {/* Stats */}
-      <div className="flex gap-3 px-4 pt-4 pb-3">
+      {/* Month navigation — global for all tabs */}
+      <div className="flex items-center justify-between px-4 pt-3 pb-1">
+        <button
+          onClick={() => { setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1)); setSelectedDate(null) }}
+          className="p-1.5 rounded-lg hover:bg-secondary transition-colors"
+        >
+          <ChevronLeft className="h-5 w-5 text-foreground" />
+        </button>
+        <span className="text-base font-bold text-foreground">
+          {MONTH_NAMES[currentMonth.getMonth()]} {currentMonth.getFullYear()}
+        </span>
+        <button
+          onClick={() => { setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1)); setSelectedDate(null) }}
+          className="p-1.5 rounded-lg hover:bg-secondary transition-colors"
+        >
+          <ChevronRight className="h-5 w-5 text-foreground" />
+        </button>
+      </div>
+
+      {/* Stats — filtered by current month */}
+      <div className="flex gap-3 px-4 pt-2 pb-3">
         <div className="flex-1 bg-primary/10 rounded-xl p-3 text-center">
           <p className="text-2xl font-bold text-primary">{couriers.length}</p>
           <p className="text-xs text-muted-foreground mt-0.5">Курьеров</p>
         </div>
         <div className="flex-1 bg-secondary rounded-xl p-3 text-center">
-          <p className="text-2xl font-bold text-foreground">{shifts.length}</p>
+          <p className="text-2xl font-bold text-foreground">{monthShifts.length}</p>
           <p className="text-xs text-muted-foreground mt-0.5">Выходов</p>
         </div>
         <div className="flex-1 bg-secondary rounded-xl p-3 text-center">
-          <p className="text-2xl font-bold text-foreground">{reserves.length}</p>
+          <p className="text-2xl font-bold text-foreground">{monthReserves.length}</p>
           <p className="text-xs text-muted-foreground mt-0.5">Резервов</p>
         </div>
       </div>
@@ -321,25 +347,6 @@ export default function AdminPage() {
       {/* ── CALENDAR TAB ── */}
       {activeTab === "calendar" && (
         <div className="flex-1 overflow-y-auto px-4 pb-10">
-          {/* Month navigation */}
-          <div className="flex items-center justify-between mb-4">
-            <button
-              onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1))}
-              className="p-2 rounded-lg hover:bg-secondary transition-colors"
-            >
-              <ChevronLeft className="h-5 w-5 text-foreground" />
-            </button>
-            <span className="text-base font-bold text-foreground">
-              {MONTH_NAMES[currentMonth.getMonth()]} {currentMonth.getFullYear()}
-            </span>
-            <button
-              onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1))}
-              className="p-2 rounded-lg hover:bg-secondary transition-colors"
-            >
-              <ChevronRight className="h-5 w-5 text-foreground" />
-            </button>
-          </div>
-
           {/* Weekday headers */}
           <div className="grid grid-cols-7 mb-1">
             {WEEKDAY_LABELS.map(l => (
@@ -503,7 +510,7 @@ export default function AdminPage() {
         <div className="flex-1 overflow-y-auto px-4 pb-10">
           {shiftDates.length === 0 ? (
             <p className="text-center text-muted-foreground text-sm py-10">
-              Нет запланированных выходов
+              Нет выходов в {MONTH_NAMES[currentMonth.getMonth()].toLowerCase()}
             </p>
           ) : shiftDates.map(date => (
             <DateBlock key={date} date={date}>
@@ -540,7 +547,7 @@ export default function AdminPage() {
         <div className="flex-1 overflow-y-auto px-4 pb-10">
           {reserveDates.length === 0 ? (
             <p className="text-center text-muted-foreground text-sm py-10">
-              Нет запланированных резервов
+              Нет резервов в {MONTH_NAMES[currentMonth.getMonth()].toLowerCase()}
             </p>
           ) : reserveDates.map(date => (
             <DateBlock key={date} date={date}>
