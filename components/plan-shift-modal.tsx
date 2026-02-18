@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { X, CalendarDays } from "lucide-react"
+import { X, Store } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { WORKPLACES } from "@/lib/types"
 import { TimeSelector } from "./time-selector"
@@ -16,6 +16,7 @@ interface EditData {
   workplaceId: string
   repeat: boolean
   repeatDays?: number[]
+  repeatUntil?: string
 }
 
 interface PlanShiftModalProps {
@@ -28,9 +29,11 @@ interface PlanShiftModalProps {
     workplaceId: string
     repeat: boolean
     repeatDays: number[]
+    repeatUntil?: string
   }) => void
   editData?: EditData
   onDelete?: (id: string) => void
+  initialDate?: Date
 }
 
 function formatDate(date: Date | null) {
@@ -53,14 +56,16 @@ function parseISODate(dateStr: string): Date {
   return new Date(y, m - 1, d)
 }
 
-export function PlanShiftModal({ isOpen, onClose, onSubmit, editData, onDelete }: PlanShiftModalProps) {
+export function PlanShiftModal({ isOpen, onClose, onSubmit, editData, onDelete, initialDate }: PlanShiftModalProps) {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null)
   const [timeFrom, setTimeFrom] = useState("")
   const [timeTo, setTimeTo] = useState("")
   const [repeat, setRepeat] = useState(false)
   const [repeatDays, setRepeatDays] = useState<number[]>([])
+  const [repeatUntil, setRepeatUntil] = useState<Date | null>(null)
   const [selectedWorkplace, setSelectedWorkplace] = useState("")
   const [showDatePicker, setShowDatePicker] = useState(false)
+  const [showRepeatUntilPicker, setShowRepeatUntilPicker] = useState(false)
 
   const isEditMode = !!editData
 
@@ -72,6 +77,9 @@ export function PlanShiftModal({ isOpen, onClose, onSubmit, editData, onDelete }
       setSelectedWorkplace(editData.workplaceId)
       setRepeat(editData.repeat)
       setRepeatDays(editData.repeatDays || [])
+      setRepeatUntil(editData.repeatUntil ? parseISODate(editData.repeatUntil) : null)
+    } else if (isOpen && initialDate) {
+      setSelectedDate(initialDate)
     }
     if (!isOpen) {
       setSelectedDate(null)
@@ -79,6 +87,7 @@ export function PlanShiftModal({ isOpen, onClose, onSubmit, editData, onDelete }
       setTimeTo("")
       setRepeat(false)
       setRepeatDays([])
+      setRepeatUntil(null)
       setSelectedWorkplace("")
     }
   }, [isOpen]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -96,6 +105,7 @@ export function PlanShiftModal({ isOpen, onClose, onSubmit, editData, onDelete }
       workplaceId: selectedWorkplace,
       repeat,
       repeatDays,
+      repeatUntil: repeatUntil ? toISODate(repeatUntil) : undefined,
     })
     onClose()
   }
@@ -135,7 +145,10 @@ export function PlanShiftModal({ isOpen, onClose, onSubmit, editData, onDelete }
                 className="flex w-full flex-col rounded-xl bg-secondary px-4 py-3 text-sm transition-colors text-left"
               >
                 <span className="text-xs text-muted-foreground mb-0.5">Выберите дату</span>
-                {selectedDate && <span className="text-foreground font-medium">{formatDate(selectedDate)}</span>}
+                {selectedDate
+                  ? <span className="text-foreground font-medium">{formatDate(selectedDate)}</span>
+                  : <span className="text-muted-foreground">Не выбрана</span>
+                }
               </button>
             </div>
 
@@ -168,7 +181,25 @@ export function PlanShiftModal({ isOpen, onClose, onSubmit, editData, onDelete }
                   />
                 </button>
               </div>
-              {repeat && <DayOfWeekPicker selectedDays={repeatDays} onChange={setRepeatDays} />}
+              {repeat && (
+                <>
+                  <DayOfWeekPicker selectedDays={repeatDays} onChange={setRepeatDays} />
+                  <div className="mt-3">
+                    <label className="text-sm font-semibold text-foreground block mb-2">До какой даты?</label>
+                    <button
+                      type="button"
+                      onClick={() => setShowRepeatUntilPicker(true)}
+                      className="flex w-full flex-col rounded-xl bg-secondary px-4 py-3 text-sm transition-colors text-left"
+                    >
+                      <span className="text-xs text-muted-foreground mb-0.5">Повторять до</span>
+                      {repeatUntil
+                        ? <span className="text-foreground font-medium">{formatDate(repeatUntil)}</span>
+                        : <span className="text-muted-foreground">Не указано</span>
+                      }
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
 
             {/* Workplace */}
@@ -187,7 +218,7 @@ export function PlanShiftModal({ isOpen, onClose, onSubmit, editData, onDelete }
                     )}
                   >
                     <div className="h-9 w-9 rounded-lg bg-secondary flex items-center justify-center shrink-0">
-                      <CalendarDays className="h-4 w-4 text-muted-foreground" />
+                      <Store className="h-4 w-4 text-muted-foreground" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-foreground">{wp.code}</p>
@@ -241,6 +272,13 @@ export function PlanShiftModal({ isOpen, onClose, onSubmit, editData, onDelete }
         onClose={() => setShowDatePicker(false)}
         onSelect={(date) => setSelectedDate(date)}
         selectedDate={selectedDate}
+      />
+
+      <DatePickerModal
+        isOpen={showRepeatUntilPicker}
+        onClose={() => setShowRepeatUntilPicker(false)}
+        onSelect={(date) => setRepeatUntil(date)}
+        selectedDate={repeatUntil}
       />
     </>
   )

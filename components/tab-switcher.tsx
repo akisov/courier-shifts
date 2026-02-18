@@ -14,7 +14,7 @@ export function TabSwitcher({ activeTab, onTabChange }: TabSwitcherProps) {
         <button
           onClick={() => onTabChange("shifts")}
           className={cn(
-            "flex-1 rounded-lg py-2.5 text-sm font-semibold transition-all",
+            "flex-1 rounded-lg py-2.5 text-sm font-semibold transition-all outline-none",
             activeTab === "shifts"
               ? "bg-primary text-primary-foreground shadow-sm"
               : "text-foreground/60 hover:text-foreground"
@@ -25,7 +25,7 @@ export function TabSwitcher({ activeTab, onTabChange }: TabSwitcherProps) {
         <button
           onClick={() => onTabChange("reserve")}
           className={cn(
-            "flex-1 rounded-lg py-2.5 text-sm font-semibold transition-all",
+            "flex-1 rounded-lg py-2.5 text-sm font-semibold transition-all outline-none",
             activeTab === "reserve"
               ? "bg-primary text-primary-foreground shadow-sm"
               : "text-foreground/60 hover:text-foreground"

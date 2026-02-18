@@ -17,6 +17,7 @@ interface EditData {
   location: LocationType
   repeat: boolean
   repeatDays?: number[]
+  repeatUntil?: string
 }
 
 interface PlanReserveModalProps {
@@ -30,9 +31,11 @@ interface PlanReserveModalProps {
     location: LocationType
     repeat: boolean
     repeatDays: number[]
+    repeatUntil?: string
   }) => void
   editData?: EditData
   onDelete?: (id: string) => void
+  initialDate?: Date
 }
 
 function formatDate(date: Date | null) {
@@ -66,7 +69,7 @@ const LOCATION_OPTIONS: { value: LocationType; label: string }[] = [
   { value: "whole_city", label: "По всему городу" },
 ]
 
-export function PlanReserveModal({ isOpen, onClose, onSubmit, editData, onDelete }: PlanReserveModalProps) {
+export function PlanReserveModal({ isOpen, onClose, onSubmit, editData, onDelete, initialDate }: PlanReserveModalProps) {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null)
   const [timeFrom, setTimeFrom] = useState("")
   const [timeTo, setTimeTo] = useState("")
@@ -74,7 +77,9 @@ export function PlanReserveModal({ isOpen, onClose, onSubmit, editData, onDelete
   const [location, setLocation] = useState<LocationType | null>(null)
   const [repeat, setRepeat] = useState(false)
   const [repeatDays, setRepeatDays] = useState<number[]>([])
+  const [repeatUntil, setRepeatUntil] = useState<Date | null>(null)
   const [showDatePicker, setShowDatePicker] = useState(false)
+  const [showRepeatUntilPicker, setShowRepeatUntilPicker] = useState(false)
 
   const isEditMode = !!editData
 
@@ -87,6 +92,9 @@ export function PlanReserveModal({ isOpen, onClose, onSubmit, editData, onDelete
       setLocation(editData.location)
       setRepeat(editData.repeat)
       setRepeatDays(editData.repeatDays || [])
+      setRepeatUntil(editData.repeatUntil ? parseISODate(editData.repeatUntil) : null)
+    } else if (isOpen && initialDate) {
+      setSelectedDate(initialDate)
     }
     if (!isOpen) {
       setSelectedDate(null)
@@ -96,6 +104,7 @@ export function PlanReserveModal({ isOpen, onClose, onSubmit, editData, onDelete
       setLocation(null)
       setRepeat(false)
       setRepeatDays([])
+      setRepeatUntil(null)
     }
   }, [isOpen]) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -113,6 +122,7 @@ export function PlanReserveModal({ isOpen, onClose, onSubmit, editData, onDelete
       location,
       repeat,
       repeatDays,
+      repeatUntil: repeatUntil ? toISODate(repeatUntil) : undefined,
     })
     onClose()
   }
@@ -148,7 +158,10 @@ export function PlanReserveModal({ isOpen, onClose, onSubmit, editData, onDelete
                 className="flex w-full flex-col rounded-xl bg-secondary px-4 py-3 text-sm transition-colors text-left"
               >
                 <span className="text-xs text-muted-foreground mb-0.5">Выберите дату</span>
-                {selectedDate && <span className="text-foreground font-medium">{formatDate(selectedDate)}</span>}
+                {selectedDate
+                  ? <span className="text-foreground font-medium">{formatDate(selectedDate)}</span>
+                  : <span className="text-muted-foreground">Не выбрана</span>
+                }
               </button>
             </div>
 
@@ -229,7 +242,25 @@ export function PlanReserveModal({ isOpen, onClose, onSubmit, editData, onDelete
                   />
                 </button>
               </div>
-              {repeat && <DayOfWeekPicker selectedDays={repeatDays} onChange={setRepeatDays} />}
+              {repeat && (
+                <>
+                  <DayOfWeekPicker selectedDays={repeatDays} onChange={setRepeatDays} />
+                  <div className="mt-3">
+                    <label className="text-sm font-semibold text-foreground block mb-2">До какой даты?</label>
+                    <button
+                      type="button"
+                      onClick={() => setShowRepeatUntilPicker(true)}
+                      className="flex w-full flex-col rounded-xl bg-secondary px-4 py-3 text-sm transition-colors text-left"
+                    >
+                      <span className="text-xs text-muted-foreground mb-0.5">Повторять до</span>
+                      {repeatUntil
+                        ? <span className="text-foreground font-medium">{formatDate(repeatUntil)}</span>
+                        : <span className="text-muted-foreground">Не указано</span>
+                      }
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
           </div>
 
@@ -265,6 +296,13 @@ export function PlanReserveModal({ isOpen, onClose, onSubmit, editData, onDelete
         onClose={() => setShowDatePicker(false)}
         onSelect={(date) => setSelectedDate(date)}
         selectedDate={selectedDate}
+      />
+
+      <DatePickerModal
+        isOpen={showRepeatUntilPicker}
+        onClose={() => setShowRepeatUntilPicker(false)}
+        onSelect={(date) => setRepeatUntil(date)}
+        selectedDate={repeatUntil}
       />
     </>
   )

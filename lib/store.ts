@@ -27,6 +27,7 @@ export function useAppStore() {
           workplaceId: r.workplace_id,
           repeat: r.repeat,
           repeatDays: r.repeat_days,
+          repeatUntil: r.repeat_until,
         })))
       }
 
@@ -40,6 +41,7 @@ export function useAppStore() {
           location: r.location,
           repeat: r.repeat,
           repeatDays: r.repeat_days,
+          repeatUntil: r.repeat_until,
         })))
       }
 
@@ -61,6 +63,7 @@ export function useAppStore() {
       workplace_id: shift.workplaceId,
       repeat: shift.repeat,
       repeat_days: shift.repeatDays,
+      repeat_until: shift.repeatUntil,
     }).select().single()
 
     if (!error && data) {
@@ -72,6 +75,7 @@ export function useAppStore() {
         workplaceId: data.workplace_id,
         repeat: data.repeat,
         repeatDays: data.repeat_days,
+        repeatUntil: data.repeat_until,
       }])
     }
   }, [])
@@ -89,6 +93,7 @@ export function useAppStore() {
       location: reserve.location,
       repeat: reserve.repeat,
       repeat_days: reserve.repeatDays,
+      repeat_until: reserve.repeatUntil,
     }).select().single()
 
     if (!error && data) {
@@ -101,6 +106,7 @@ export function useAppStore() {
         location: data.location,
         repeat: data.repeat,
         repeatDays: data.repeat_days,
+        repeatUntil: data.repeat_until,
       }])
     }
   }, [])
@@ -113,6 +119,7 @@ export function useAppStore() {
       workplace_id: shift.workplaceId,
       repeat: shift.repeat,
       repeat_days: shift.repeatDays,
+      repeat_until: shift.repeatUntil,
     }).eq("id", id)
 
     if (!error) {
@@ -136,6 +143,7 @@ export function useAppStore() {
       location: reserve.location,
       repeat: reserve.repeat,
       repeat_days: reserve.repeatDays,
+      repeat_until: reserve.repeatUntil,
     }).eq("id", id)
 
     if (!error) {

@@ -108,6 +108,7 @@ export default function HomePage() {
         isOpen={showShiftModal}
         onClose={() => setShowShiftModal(false)}
         onSubmit={(data) => addPlannedShift(data)}
+        initialDate={selectedDate ?? undefined}
       />
 
       {/* Edit shift modal */}
@@ -126,6 +127,7 @@ export default function HomePage() {
         isOpen={showReserveModal}
         onClose={() => setShowReserveModal(false)}
         onSubmit={(data) => addPlannedReserve(data)}
+        initialDate={selectedDate ?? undefined}
       />
 
       {/* Edit reserve modal */}

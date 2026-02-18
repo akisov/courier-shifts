@@ -17,28 +17,53 @@ export function DayOfWeekPicker({ selectedDays, onChange }: DayOfWeekPickerProps
     }
   }
 
+  const firstRow = DAYS_OF_WEEK.slice(0, 4) // Пн Вт Ср Чт
+  const secondRow = DAYS_OF_WEEK.slice(4)   // Пт Сб Вс
+
   return (
-    <div className="mt-2">
+    <div className="mt-3">
       <p className="text-xs text-muted-foreground mb-2">Каждую неделю</p>
-      <div className="flex flex-wrap gap-2">
-        {DAYS_OF_WEEK.map((day) => {
-          const selected = selectedDays.includes(day.id)
-          return (
-            <button
-              key={day.id}
-              type="button"
-              onClick={() => toggle(day.id)}
-              className={cn(
-                "h-9 w-9 rounded-full text-xs font-medium transition-all",
-                selected
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-secondary text-foreground hover:bg-border"
-              )}
-            >
-              {day.short}
-            </button>
-          )
-        })}
+      <div className="flex flex-col gap-2">
+        <div className="grid grid-cols-4 gap-2">
+          {firstRow.map((day) => {
+            const selected = selectedDays.includes(day.id)
+            return (
+              <button
+                key={day.id}
+                type="button"
+                onClick={() => toggle(day.id)}
+                className={cn(
+                  "py-3 rounded-xl text-sm font-semibold transition-all",
+                  selected
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-secondary text-foreground hover:bg-border"
+                )}
+              >
+                {day.short}
+              </button>
+            )
+          })}
+        </div>
+        <div className="grid grid-cols-3 gap-2">
+          {secondRow.map((day) => {
+            const selected = selectedDays.includes(day.id)
+            return (
+              <button
+                key={day.id}
+                type="button"
+                onClick={() => toggle(day.id)}
+                className={cn(
+                  "py-3 rounded-xl text-sm font-semibold transition-all",
+                  selected
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-secondary text-foreground hover:bg-border"
+                )}
+              >
+                {day.short}
+              </button>
+            )
+          })}
+        </div>
       </div>
     </div>
   )

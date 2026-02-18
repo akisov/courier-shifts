@@ -143,22 +143,21 @@ export function MonthCalendar({
                 )
               }
               className={cn(
-                "relative flex flex-col items-center justify-center h-11 rounded-xl text-sm font-medium transition-colors border",
+                "relative flex flex-col items-center justify-center h-11 rounded-xl text-sm font-medium transition-colors outline-none",
                 selected
-                  ? "bg-primary text-primary-foreground font-bold border-transparent"
-                  : reserveStatus === "can"
-                    ? "bg-primary/15 text-primary font-semibold border-primary/40"
-                    : reserveStatus === "if_needed"
-                      ? "bg-[#f5c518]/20 text-[#b8940e] font-semibold border-[#f5c518]/60"
-                      : reserveStatus === "cannot"
-                        ? "bg-destructive/15 text-destructive font-semibold border-destructive/40"
-                        : "text-foreground hover:bg-secondary border-transparent"
+                  ? "bg-primary text-primary-foreground font-bold"
+                  : hasShiftDay
+                    ? "bg-primary/15 text-primary font-semibold"
+                    : reserveStatus === "can"
+                      ? "bg-primary/15 text-primary font-semibold"
+                      : reserveStatus === "if_needed"
+                        ? "bg-[#f5c518]/20 text-[#b8940e] font-semibold"
+                        : reserveStatus === "cannot"
+                          ? "bg-destructive/15 text-destructive font-semibold"
+                          : "text-foreground hover:bg-secondary"
               )}
             >
               <span>{day}</span>
-              {hasShiftDay && !selected && (
-                <span className="absolute bottom-0.5 h-1.5 w-1.5 rounded-full bg-primary" />
-              )}
             </button>
           )
         })}

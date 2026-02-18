@@ -16,6 +16,7 @@ export interface PlannedShift {
   workplaceId: string
   repeat: boolean
   repeatDays?: number[]
+  repeatUntil?: string
 }
 
 export interface PlannedReserve {
@@ -27,6 +28,7 @@ export interface PlannedReserve {
   location: LocationType
   repeat: boolean
   repeatDays?: number[]
+  repeatUntil?: string
 }
 
 export interface ShiftEntry {
