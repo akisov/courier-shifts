@@ -143,16 +143,16 @@ export function MonthCalendar({
                 )
               }
               className={cn(
-                "relative flex flex-col items-center justify-center h-11 rounded-xl text-sm font-medium transition-colors",
+                "relative flex flex-col items-center justify-center h-11 rounded-xl text-sm font-medium transition-colors border",
                 selected
-                  ? "bg-primary text-primary-foreground font-bold"
+                  ? "bg-primary text-primary-foreground font-bold border-transparent"
                   : reserveStatus === "can"
-                    ? "bg-primary/15 text-primary font-semibold"
+                    ? "bg-primary/15 text-primary font-semibold border-primary/40"
                     : reserveStatus === "if_needed"
-                      ? "bg-[#f5c518]/20 text-[#b8940e] font-semibold"
+                      ? "bg-[#f5c518]/20 text-[#b8940e] font-semibold border-[#f5c518]/60"
                       : reserveStatus === "cannot"
-                        ? "bg-destructive/15 text-destructive font-semibold"
-                        : "text-foreground hover:bg-secondary"
+                        ? "bg-destructive/15 text-destructive font-semibold border-destructive/40"
+                        : "text-foreground hover:bg-secondary border-transparent"
               )}
             >
               <span>{day}</span>
