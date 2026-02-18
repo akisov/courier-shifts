@@ -16,13 +16,23 @@ export default function LoginPage() {
     setLoading(true)
     setError("")
 
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password })
 
     if (error) {
       setError("Неверный email или пароль")
       setLoading(false)
     } else {
-      router.push("/")
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", data.user.id)
+        .single()
+
+      if (profile?.role === "admin") {
+        router.push("/admin")
+      } else {
+        router.push("/")
+      }
       router.refresh()
     }
   }
