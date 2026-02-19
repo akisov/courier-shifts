@@ -526,52 +526,49 @@ export default function AdminPage() {
               )}
 
               {selectedReserves.length > 0 && (
-                <div>
-                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
-                    Резервы
-                  </p>
-                  <div className="flex flex-col gap-2">
-                    {selectedReserves.map(reserve => {
-                        const isAbsence = reserve.status === "vacation" || reserve.status === "sick_leave"
-                        return (
-                          <div key={reserve.id} className="bg-secondary rounded-xl p-3">
-                            <div className="flex items-center justify-between mb-1">
-                              <span className="text-sm font-semibold text-foreground">
-                                {getCourierName(reserve.user_id)}
-                              </span>
-                              <span className={cn("text-xs px-2 py-0.5 rounded-md font-medium", statusColors[reserve.status] || "")}>
-                                {statusLabels[reserve.status] || reserve.status}
-                              </span>
-                            </div>
-                            {isAbsence ? (
-                              reserve.date_to && (
-                                <p className="text-xs text-muted-foreground">до {formatDateHeader(reserve.date_to)}</p>
-                              )
-                            ) : (
-                              <>
-                                <p className="text-sm text-foreground">{reserve.time_from} — {reserve.time_to}</p>
-                                <p className="text-xs text-muted-foreground mt-0.5">
-                                  {locationLabels[reserve.location] || reserve.location}
-                                </p>
-                                <div className="mt-2">
-                                  {reserve.confirmed ? (
-                                    <span className="text-xs font-semibold text-primary bg-primary/10 px-2.5 py-1 rounded-lg">✓ Назначен</span>
-                                  ) : reserve.status !== "cannot" && (
-                                    <button
-                                      onClick={() => confirmReserve(reserve)}
-                                      disabled={confirmingId === reserve.id}
-                                      className="text-xs font-semibold text-primary-foreground bg-primary px-3 py-1.5 rounded-lg disabled:opacity-60 transition-opacity"
-                                    >
-                                      {confirmingId === reserve.id ? "..." : "Назначить"}
-                                    </button>
-                                  )}
-                                </div>
-                              </>
-                            )}
-                          </div>
-                        )
-                      })}
+                <div className="rounded-2xl border border-border overflow-hidden bg-background">
+                  <div className="px-4 py-3 border-b border-border">
+                    <h3 className="text-sm font-bold text-foreground">Резервы</h3>
                   </div>
+                  {selectedReserves.map((reserve, idx) => {
+                    const isAbsence = reserve.status === "vacation" || reserve.status === "sick_leave"
+                    return (
+                      <div key={reserve.id} className={cn("px-4 py-3", idx > 0 && "border-t border-border")}>
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-sm font-medium text-foreground">
+                            {getCourierName(reserve.user_id)}
+                          </span>
+                          <span className={cn("text-xs px-2 py-0.5 rounded-md font-medium", statusColors[reserve.status] || "")}>
+                            {statusLabels[reserve.status] || reserve.status}
+                          </span>
+                        </div>
+                        {isAbsence ? (
+                          reserve.date_to && (
+                            <p className="text-xs text-muted-foreground">до {formatDateHeader(reserve.date_to)}</p>
+                          )
+                        ) : (
+                          <>
+                            <p className="text-xs text-muted-foreground">
+                              {reserve.time_from} — {reserve.time_to} · {locationLabels[reserve.location] || reserve.location}
+                            </p>
+                            <div className="mt-2">
+                              {reserve.confirmed ? (
+                                <span className="text-xs font-semibold text-primary bg-primary/10 px-2.5 py-1 rounded-lg">✓ Назначен</span>
+                              ) : reserve.status !== "cannot" && (
+                                <button
+                                  onClick={() => confirmReserve(reserve)}
+                                  disabled={confirmingId === reserve.id}
+                                  className="text-xs font-semibold text-primary-foreground bg-primary px-3 py-1.5 rounded-lg disabled:opacity-60 transition-opacity"
+                                >
+                                  {confirmingId === reserve.id ? "..." : "Назначить"}
+                                </button>
+                              )}
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    )
+                  })}
                 </div>
               )}
             </div>
