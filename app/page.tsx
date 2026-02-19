@@ -12,7 +12,7 @@ import { useAppStore } from "@/lib/store"
 import { supabase } from "@/lib/supabase"
 import { WORKPLACES } from "@/lib/types"
 import type { PlannedShift, PlannedReserve } from "@/lib/types"
-import { Clock, MapPin, Pencil } from "lucide-react"
+import { Clock, Pencil } from "lucide-react"
 
 export default function HomePage() {
   const router = useRouter()
@@ -72,9 +72,7 @@ export default function HomePage() {
         onSelectDate={setSelectedDate}
       />
 
-      <div className="h-px bg-border mx-4" />
-
-      <div className="flex-1 overflow-y-auto mt-3">
+      <div className="flex-1 overflow-y-auto mt-3 pb-24">
         {activeTab === "shifts" ? (
           <PlannedShiftList
             plannedShifts={plannedShifts}
@@ -161,39 +159,38 @@ function PlannedShiftList({
   plannedShifts: PlannedShift[]
   onEdit: (shift: PlannedShift) => void
 }) {
-  if (plannedShifts.length === 0) {
-    return (
-      <div className="px-4 py-8 text-center text-muted-foreground text-sm">
-        Нет запланированных выходов
-      </div>
-    )
-  }
+  const months = ["янв", "фев", "мар", "апр", "мая", "июн", "июл", "авг", "сен", "окт", "ноя", "дек"]
+  const weekdays = ["Вс", "Пн", "Вт", "Ср", "Чт", "Пт", "Сб"]
 
   const grouped = plannedShifts.reduce<Record<string, PlannedShift[]>>((acc, s) => {
     if (!acc[s.date]) acc[s.date] = []
     acc[s.date].push(s)
     return acc
   }, {})
-
   const sortedDates = Object.keys(grouped).sort()
-  const months = ["янв", "фев", "мар", "апр", "мая", "июн", "июл", "авг", "сен", "окт", "ноя", "дек"]
-  const weekdays = ["Вс", "Пн", "Вт", "Ср", "Чт", "Пт", "Сб"]
 
   return (
-    <div className="px-4 pb-24">
-      <h3 className="text-base font-bold text-foreground mb-3">Мои выходы</h3>
-      {sortedDates.map((date) => {
-        const d = new Date(date + "T00:00:00")
-        const header = `${d.getDate()} ${months[d.getMonth()]}, ${weekdays[d.getDay()]}`
-        return (
-          <div key={date} className="mb-1">
-            <p className="text-base font-bold text-foreground py-2">{header}</p>
-            <div className="flex flex-col">
+    <div className="mx-4 rounded-2xl border border-border overflow-hidden bg-background">
+      <div className="px-4 py-4 border-b border-border">
+        <h3 className="text-base font-bold text-foreground">Мои выходы</h3>
+      </div>
+
+      {plannedShifts.length === 0 ? (
+        <div className="px-4 py-8 text-center text-muted-foreground text-sm">
+          Нет запланированных выходов
+        </div>
+      ) : (
+        sortedDates.map((date, dateIdx) => {
+          const d = new Date(date + "T00:00:00")
+          const header = `${d.getDate()} ${months[d.getMonth()]}, ${weekdays[d.getDay()]}`
+          return (
+            <div key={date} className={dateIdx > 0 ? "border-t border-border" : ""}>
+              <p className="px-4 pt-3 pb-1 text-base font-bold text-foreground">{header}</p>
               {grouped[date].map((shift, idx) => {
                 const workplace = WORKPLACES.find(w => w.id === shift.workplaceId)
                 const duration = calcDuration(shift.timeFrom, shift.timeTo)
                 return (
-                  <div key={shift.id} className="flex items-center justify-between py-3 border-b border-border last:border-0">
+                  <div key={shift.id} className="flex items-center justify-between px-4 py-3 border-t border-border">
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
                         <span className="text-sm font-medium text-foreground">
@@ -205,15 +202,12 @@ function PlannedShiftList({
                         </span>
                       </div>
                       {workplace && (
-                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                          <MapPin className="h-3 w-3" />
-                          {workplace.address}
-                        </div>
+                        <p className="text-xs text-muted-foreground">{workplace.address}</p>
                       )}
                     </div>
                     <button
                       onClick={() => onEdit(shift)}
-                      className="ml-3 h-9 w-9 flex items-center justify-center rounded-xl bg-secondary text-muted-foreground hover:text-foreground transition-colors"
+                      className="ml-3 h-9 w-9 flex items-center justify-center rounded-xl bg-secondary text-muted-foreground hover:text-foreground transition-colors outline-none"
                       aria-label="Редактировать"
                     >
                       <Pencil className="h-4 w-4" />
@@ -222,9 +216,9 @@ function PlannedShiftList({
                 )
               })}
             </div>
-          </div>
-        )
-      })}
+          )
+        })
+      )}
     </div>
   )
 }
