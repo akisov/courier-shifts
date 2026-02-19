@@ -497,17 +497,17 @@ export default function AdminPage() {
               )}
 
               {selectedShifts.length > 0 && (
-                <div className="mb-4">
-                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
-                    Выходы
-                  </p>
-                  <div className="flex flex-col gap-2">
-                    {selectedShifts.map(shift => {
-                      const wp = WORKPLACES.find(w => w.id === shift.workplace_id)
-                      return (
-                        <div key={shift.id} className="bg-secondary rounded-xl p-3">
-                          <div className="flex items-center justify-between mb-1">
-                            <span className="text-sm font-semibold text-foreground">
+                <div className="mb-4 rounded-2xl border border-border overflow-hidden bg-background">
+                  <div className="px-4 py-3 border-b border-border">
+                    <h3 className="text-sm font-bold text-foreground">Выходы</h3>
+                  </div>
+                  {selectedShifts.map((shift, idx) => {
+                    const wp = WORKPLACES.find(w => w.id === shift.workplace_id)
+                    return (
+                      <div key={shift.id} className={cn("flex items-center justify-between px-4 py-3", idx > 0 && "border-t border-border")}>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-sm font-medium text-foreground">
                               {getCourierName(shift.user_id)}
                             </span>
                             <span className="flex items-center gap-1 text-xs font-semibold text-primary bg-primary/10 px-2 py-0.5 rounded-full">
@@ -515,19 +515,13 @@ export default function AdminPage() {
                               {calcDuration(shift.time_from, shift.time_to)}
                             </span>
                           </div>
-                          <p className="text-sm text-foreground">
-                            {shift.time_from} — {shift.time_to}
+                          <p className="text-xs text-muted-foreground">
+                            {shift.time_from} — {shift.time_to}{wp && ` · ${wp.address}`}
                           </p>
-                          {wp && (
-                            <div className="flex items-center gap-1 mt-1 text-xs text-muted-foreground">
-                              <MapPin className="h-3 w-3" />
-                              {wp.address}
-                            </div>
-                          )}
                         </div>
-                      )
-                    })}
-                  </div>
+                      </div>
+                    )
+                  })}
                 </div>
               )}
 
