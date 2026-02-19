@@ -58,7 +58,7 @@ export default function HomePage() {
 
   return (
     <div className="min-h-dvh bg-background flex flex-col max-w-md mx-auto relative">
-      <AppHeader />
+      <AppHeader onLogout={async () => { await supabase.auth.signOut(); router.replace("/login") }} />
       <TabSwitcher activeTab={activeTab} onTabChange={setActiveTab} />
 
       {activeTab === "reserve" && <ReserveInfo />}
