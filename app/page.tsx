@@ -237,6 +237,8 @@ function ReserveList({
     can: "Могу",
     if_needed: "При необходимости",
     cannot: "Не могу",
+    vacation: "Отпуск",
+    sick_leave: "Больничный",
   }
   const locationLabels: Record<string, string> = {
     own_points: "Только в своих точках",
@@ -246,6 +248,12 @@ function ReserveList({
     can: "bg-primary/10 text-primary",
     if_needed: "bg-[#f5c518]/10 text-[#b8940e]",
     cannot: "bg-destructive/10 text-destructive",
+    vacation: "bg-blue-500/10 text-blue-600",
+    sick_leave: "bg-orange-500/10 text-orange-600",
+  }
+  const fmtShort = (iso: string) => {
+    const d = new Date(iso + "T00:00:00")
+    return `${d.getDate()} ${months[d.getMonth()]}`
   }
 
   const grouped = reserves.reduce<Record<string, PlannedReserve[]>>((acc, r) => {
@@ -272,30 +280,38 @@ function ReserveList({
           return (
             <div key={date} className={dateIdx > 0 ? "border-t border-border" : ""}>
               <p className="px-4 pt-3 pb-1 text-base font-bold text-foreground">{header}</p>
-              {grouped[date].map((reserve) => (
-                <div key={reserve.id} className="flex items-center justify-between px-4 py-3 border-t border-border">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-sm font-medium text-foreground">
-                        {reserve.timeFrom} - {reserve.timeTo}
-                      </span>
-                      <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${statusColors[reserve.status] || ""}`}>
-                        {statusLabels[reserve.status] || reserve.status}
-                      </span>
+              {grouped[date].map((reserve) => {
+                const isAbsence = reserve.status === "vacation" || reserve.status === "sick_leave"
+                return (
+                  <div key={reserve.id} className="flex items-center justify-between px-4 py-3 border-t border-border">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        {!isAbsence && (
+                          <span className="text-sm font-medium text-foreground">
+                            {reserve.timeFrom} - {reserve.timeTo}
+                          </span>
+                        )}
+                        <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${statusColors[reserve.status] || ""}`}>
+                          {statusLabels[reserve.status] || reserve.status}
+                        </span>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        {isAbsence
+                          ? reserve.dateTo ? `${fmtShort(reserve.date)} — ${fmtShort(reserve.dateTo)}` : fmtShort(reserve.date)
+                          : locationLabels[reserve.location] || reserve.location
+                        }
+                      </p>
                     </div>
-                    <p className="text-xs text-muted-foreground">
-                      {locationLabels[reserve.location] || reserve.location}
-                    </p>
+                    <button
+                      onClick={() => onEdit(reserve)}
+                      className="ml-3 h-9 w-9 flex items-center justify-center rounded-xl bg-secondary text-muted-foreground hover:text-foreground transition-colors outline-none"
+                      aria-label="Редактировать"
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </button>
                   </div>
-                  <button
-                    onClick={() => onEdit(reserve)}
-                    className="ml-3 h-9 w-9 flex items-center justify-center rounded-xl bg-secondary text-muted-foreground hover:text-foreground transition-colors outline-none"
-                    aria-label="Редактировать"
-                  >
-                    <Pencil className="h-4 w-4" />
-                  </button>
-                </div>
-              ))}
+                )
+              })}
             </div>
           )
         })

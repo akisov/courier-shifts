@@ -1,4 +1,4 @@
-export type ShiftStatus = "can" | "if_needed" | "cannot"
+export type ShiftStatus = "can" | "if_needed" | "cannot" | "vacation" | "sick_leave"
 
 export type LocationType = "own_points" | "whole_city"
 
@@ -22,6 +22,7 @@ export interface PlannedShift {
 export interface PlannedReserve {
   id: string
   date: string
+  dateTo?: string
   timeFrom: string
   timeTo: string
   status: ShiftStatus

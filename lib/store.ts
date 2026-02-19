@@ -35,6 +35,7 @@ export function useAppStore() {
         setPlannedReserves(reservesRes.data.map(r => ({
           id: r.id,
           date: r.date,
+          dateTo: r.date_to ?? undefined,
           timeFrom: r.time_from,
           timeTo: r.time_to,
           status: r.status,
@@ -87,6 +88,7 @@ export function useAppStore() {
     const { data, error } = await supabase.from("planned_reserves").insert({
       user_id: user.id,
       date: reserve.date,
+      date_to: reserve.dateTo ?? null,
       time_from: reserve.timeFrom,
       time_to: reserve.timeTo,
       status: reserve.status,
@@ -100,6 +102,7 @@ export function useAppStore() {
       setPlannedReserves(prev => [...prev, {
         id: data.id,
         date: data.date,
+        dateTo: data.date_to ?? undefined,
         timeFrom: data.time_from,
         timeTo: data.time_to,
         status: data.status,
@@ -137,6 +140,7 @@ export function useAppStore() {
   const updatePlannedReserve = useCallback(async (id: string, reserve: Omit<PlannedReserve, "id">) => {
     const { error } = await supabase.from("planned_reserves").update({
       date: reserve.date,
+      date_to: reserve.dateTo ?? null,
       time_from: reserve.timeFrom,
       time_to: reserve.timeTo,
       status: reserve.status,

@@ -55,7 +55,18 @@ export function MonthCalendar({
 
   const reserveDates = useMemo(() => {
     const map = new Map<string, string>()
-    reserves.forEach((r) => map.set(r.date, r.status))
+    reserves.forEach((r) => {
+      if (r.dateTo) {
+        const start = new Date(r.date + "T00:00:00")
+        const end = new Date(r.dateTo + "T00:00:00")
+        for (const d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+          const key = `${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, "0")}-${d.getDate().toString().padStart(2, "0")}`
+          map.set(key, r.status)
+        }
+      } else {
+        map.set(r.date, r.status)
+      }
+    })
     return map
   }, [reserves])
 
@@ -154,7 +165,11 @@ export function MonthCalendar({
                         ? "bg-[#f5c518]/20 text-[#b8940e] font-semibold"
                         : reserveStatus === "cannot"
                           ? "bg-destructive/15 text-destructive font-semibold"
-                          : "text-foreground hover:bg-secondary"
+                          : reserveStatus === "vacation"
+                            ? "bg-blue-500/15 text-blue-600 font-semibold"
+                            : reserveStatus === "sick_leave"
+                              ? "bg-orange-500/15 text-orange-600 font-semibold"
+                              : "text-foreground hover:bg-secondary"
               )}
             >
               <span>{day}</span>
@@ -164,7 +179,7 @@ export function MonthCalendar({
       </div>
 
       {activeTab === "reserve" && (
-        <div className="flex items-center justify-center gap-5 mt-4 text-xs text-foreground/70">
+        <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5 mt-4 text-xs text-foreground/70">
           <div className="flex items-center gap-1.5">
             <span className="h-2.5 w-2.5 rounded-full bg-primary" />
             <span>Могу</span>
@@ -176,6 +191,14 @@ export function MonthCalendar({
           <div className="flex items-center gap-1.5">
             <span className="h-2.5 w-2.5 rounded-full bg-destructive" />
             <span>Не могу</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="h-2.5 w-2.5 rounded-full bg-blue-500" />
+            <span>Отпуск</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="h-2.5 w-2.5 rounded-full bg-orange-500" />
+            <span>Больничный</span>
           </div>
         </div>
       )}
