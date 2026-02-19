@@ -34,6 +34,7 @@ interface AdminReserve {
   time_to: string
   status: string
   location: string
+  confirmed?: boolean
 }
 
 const MONTH_NAMES = [
@@ -128,6 +129,9 @@ export default function AdminPage() {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editName, setEditName] = useState("")
   const [saving, setSaving] = useState(false)
+
+  // Confirming reserves
+  const [confirmingId, setConfirmingId] = useState<string | null>(null)
 
   useEffect(() => {
     async function init() {
@@ -246,6 +250,30 @@ export default function AdminPage() {
       setEditingId(null)
     }
     setSaving(false)
+  }
+
+  const confirmReserve = async (reserve: AdminReserve) => {
+    setConfirmingId(reserve.id)
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) { setConfirmingId(null); return }
+
+    await supabase.from("planned_shifts").insert({
+      user_id: reserve.user_id,
+      date: reserve.date,
+      time_from: reserve.time_from,
+      time_to: reserve.time_to,
+      workplace_id: null,
+      repeat: false,
+    })
+
+    await supabase.from("planned_reserves").update({
+      confirmed: true,
+      confirmed_by: user.id,
+      confirmed_at: new Date().toISOString(),
+    }).eq("id", reserve.id)
+
+    setReserves(prev => prev.map(r => r.id === reserve.id ? { ...r, confirmed: true } : r))
+    setConfirmingId(null)
   }
 
   if (loading) {
@@ -495,6 +523,21 @@ export default function AdminPage() {
                         <p className="text-xs text-muted-foreground mt-0.5">
                           {locationLabels[reserve.location] || reserve.location}
                         </p>
+                        <div className="mt-2">
+                          {reserve.confirmed ? (
+                            <span className="text-xs font-semibold text-primary bg-primary/10 px-2.5 py-1 rounded-lg">
+                              ✓ Назначен
+                            </span>
+                          ) : reserve.status !== "cannot" && (
+                            <button
+                              onClick={() => confirmReserve(reserve)}
+                              disabled={confirmingId === reserve.id}
+                              className="text-xs font-semibold text-primary-foreground bg-primary px-3 py-1.5 rounded-lg disabled:opacity-60 transition-opacity"
+                            >
+                              {confirmingId === reserve.id ? "..." : "Назначить"}
+                            </button>
+                          )}
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -565,6 +608,21 @@ export default function AdminPage() {
                   <p className="text-xs text-muted-foreground mt-0.5">
                     {locationLabels[reserve.location] || reserve.location}
                   </p>
+                  <div className="mt-2">
+                    {reserve.confirmed ? (
+                      <span className="text-xs font-semibold text-primary bg-primary/10 px-2.5 py-1 rounded-lg">
+                        ✓ Назначен
+                      </span>
+                    ) : reserve.status !== "cannot" && (
+                      <button
+                        onClick={() => confirmReserve(reserve)}
+                        disabled={confirmingId === reserve.id}
+                        className="text-xs font-semibold text-primary-foreground bg-primary px-3 py-1.5 rounded-lg disabled:opacity-60 transition-opacity"
+                      >
+                        {confirmingId === reserve.id ? "..." : "Назначить"}
+                      </button>
+                    )}
+                  </div>
                 </div>
               ))}
             </DateBlock>
