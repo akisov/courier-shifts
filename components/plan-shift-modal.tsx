@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { X, Store } from "lucide-react"
+import { X } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { WORKPLACES } from "@/lib/types"
 import { TimeSelector } from "./time-selector"
@@ -63,7 +63,6 @@ export function PlanShiftModal({ isOpen, onClose, onSubmit, editData, onDelete, 
   const [repeat, setRepeat] = useState(false)
   const [repeatDays, setRepeatDays] = useState<number[]>([])
   const [repeatUntil, setRepeatUntil] = useState<Date | null>(null)
-  const [selectedWorkplace, setSelectedWorkplace] = useState("")
   const [showDatePicker, setShowDatePicker] = useState(false)
   const [showRepeatUntilPicker, setShowRepeatUntilPicker] = useState(false)
 
@@ -74,7 +73,6 @@ export function PlanShiftModal({ isOpen, onClose, onSubmit, editData, onDelete, 
       setSelectedDate(parseISODate(editData.date))
       setTimeFrom(editData.timeFrom)
       setTimeTo(editData.timeTo)
-      setSelectedWorkplace(editData.workplaceId)
       setRepeat(editData.repeat)
       setRepeatDays(editData.repeatDays || [])
       setRepeatUntil(editData.repeatUntil ? parseISODate(editData.repeatUntil) : null)
@@ -88,13 +86,12 @@ export function PlanShiftModal({ isOpen, onClose, onSubmit, editData, onDelete, 
       setRepeat(false)
       setRepeatDays([])
       setRepeatUntil(null)
-      setSelectedWorkplace("")
     }
   }, [isOpen]) // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!isOpen) return null
 
-  const isValid = selectedDate && timeFrom && timeTo && selectedWorkplace
+  const isValid = selectedDate && timeFrom && timeTo
 
   const handleSubmit = () => {
     if (!isValid) return
@@ -102,7 +99,7 @@ export function PlanShiftModal({ isOpen, onClose, onSubmit, editData, onDelete, 
       date: toISODate(selectedDate),
       timeFrom,
       timeTo,
-      workplaceId: selectedWorkplace,
+      workplaceId: editData?.workplaceId || WORKPLACES[0]?.id || "",
       repeat,
       repeatDays,
       repeatUntil: repeatUntil ? toISODate(repeatUntil) : undefined,
@@ -202,42 +199,6 @@ export function PlanShiftModal({ isOpen, onClose, onSubmit, editData, onDelete, 
               )}
             </div>
 
-            {/* Workplace */}
-            <div className="mb-4">
-              <label className="text-base font-bold text-foreground block mb-2">Где буду работать</label>
-              <div className="flex flex-col rounded-xl overflow-hidden border border-border">
-                {WORKPLACES.map((wp, idx) => (
-                  <button
-                    key={wp.id}
-                    type="button"
-                    onClick={() => setSelectedWorkplace(wp.id)}
-                    className={cn(
-                      "flex items-center gap-3 p-3.5 transition-all text-left",
-                      idx > 0 && "border-t border-border",
-                      selectedWorkplace === wp.id ? "bg-primary/5" : "bg-background"
-                    )}
-                  >
-                    <div className="h-9 w-9 rounded-lg bg-secondary flex items-center justify-center shrink-0">
-                      <Store className="h-4 w-4 text-muted-foreground" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-foreground">{wp.code}</p>
-                      <p className="text-xs text-muted-foreground truncate">{wp.address}</p>
-                    </div>
-                    <div
-                      className={cn(
-                        "h-5 w-5 rounded-full border-2 flex items-center justify-center shrink-0",
-                        selectedWorkplace === wp.id ? "border-primary" : "border-border"
-                      )}
-                    >
-                      {selectedWorkplace === wp.id && (
-                        <div className="h-2.5 w-2.5 rounded-full bg-primary" />
-                      )}
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </div>
           </div>
 
           {/* Buttons */}

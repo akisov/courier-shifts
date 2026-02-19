@@ -230,65 +230,76 @@ function ReserveList({
   reserves: PlannedReserve[]
   onEdit: (reserve: PlannedReserve) => void
 }) {
-  if (reserves.length === 0) {
-    return (
-      <div className="px-4 py-8 text-center text-muted-foreground text-sm">
-        Нет запланированных резервов
-      </div>
-    )
-  }
+  const months = ["янв", "фев", "мар", "апр", "мая", "июн", "июл", "авг", "сен", "окт", "ноя", "дек"]
+  const weekdays = ["Вс", "Пн", "Вт", "Ср", "Чт", "Пт", "Сб"]
 
   const statusLabels: Record<string, string> = {
     can: "Могу",
     if_needed: "При необходимости",
     cannot: "Не могу",
   }
-
   const locationLabels: Record<string, string> = {
     own_points: "Только в своих точках",
     whole_city: "По всему городу",
   }
-
   const statusColors: Record<string, string> = {
     can: "bg-primary/10 text-primary",
     if_needed: "bg-[#f5c518]/10 text-[#b8940e]",
     cannot: "bg-destructive/10 text-destructive",
   }
 
+  const grouped = reserves.reduce<Record<string, PlannedReserve[]>>((acc, r) => {
+    if (!acc[r.date]) acc[r.date] = []
+    acc[r.date].push(r)
+    return acc
+  }, {})
+  const sortedDates = Object.keys(grouped).sort()
+
   return (
-    <div className="px-4 pb-24">
-      <h3 className="text-sm font-semibold text-foreground mb-3">Мои резервы</h3>
-      <div className="flex flex-col gap-2">
-        {reserves.map((reserve) => {
-          const date = new Date(reserve.date + "T00:00:00")
-          const d = date.getDate().toString().padStart(2, "0")
-          const m = (date.getMonth() + 1).toString().padStart(2, "0")
+    <div className="mx-4 rounded-2xl border border-border overflow-hidden bg-background">
+      <div className="px-4 py-4 border-b border-border">
+        <h3 className="text-base font-bold text-foreground">Мои резервы</h3>
+      </div>
+
+      {reserves.length === 0 ? (
+        <div className="px-4 py-8 text-center text-muted-foreground text-sm">
+          Нет запланированных резервов
+        </div>
+      ) : (
+        sortedDates.map((date, dateIdx) => {
+          const d = new Date(date + "T00:00:00")
+          const header = `${d.getDate()} ${months[d.getMonth()]}, ${weekdays[d.getDay()]}`
           return (
-            <div key={reserve.id} className="bg-secondary rounded-xl p-3">
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-sm font-medium text-foreground">
-                  {d}.{m} | {reserve.timeFrom} - {reserve.timeTo}
-                </span>
-                <div className="flex items-center gap-2">
-                  <span className={`text-xs px-2 py-0.5 rounded-md font-medium ${statusColors[reserve.status] || ""}`}>
-                    {statusLabels[reserve.status] || reserve.status}
-                  </span>
+            <div key={date} className={dateIdx > 0 ? "border-t border-border" : ""}>
+              <p className="px-4 pt-3 pb-1 text-base font-bold text-foreground">{header}</p>
+              {grouped[date].map((reserve) => (
+                <div key={reserve.id} className="flex items-center justify-between px-4 py-3 border-t border-border">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-sm font-medium text-foreground">
+                        {reserve.timeFrom} - {reserve.timeTo}
+                      </span>
+                      <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${statusColors[reserve.status] || ""}`}>
+                        {statusLabels[reserve.status] || reserve.status}
+                      </span>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      {locationLabels[reserve.location] || reserve.location}
+                    </p>
+                  </div>
                   <button
                     onClick={() => onEdit(reserve)}
-                    className="h-7 w-7 flex items-center justify-center rounded-lg bg-background text-muted-foreground hover:text-foreground transition-colors"
+                    className="ml-3 h-9 w-9 flex items-center justify-center rounded-xl bg-secondary text-muted-foreground hover:text-foreground transition-colors outline-none"
                     aria-label="Редактировать"
                   >
-                    <Pencil className="h-3.5 w-3.5" />
+                    <Pencil className="h-4 w-4" />
                   </button>
                 </div>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                {locationLabels[reserve.location] || reserve.location}
-              </p>
+              ))}
             </div>
           )
-        })}
-      </div>
+        })
+      )}
     </div>
   )
 }

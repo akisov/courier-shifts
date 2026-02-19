@@ -41,7 +41,7 @@ export function MonthCalendar({
   selectedDate,
   onSelectDate,
 }: MonthCalendarProps) {
-  const [currentMonth, setCurrentMonth] = useState(new Date(2025, 9, 1))
+  const [currentMonth, setCurrentMonth] = useState(() => { const n = new Date(); return new Date(n.getFullYear(), n.getMonth(), 1) })
 
   const daysInMonth = getDaysInMonth(currentMonth.getFullYear(), currentMonth.getMonth())
   const firstDay = getFirstDayOfMonth(currentMonth.getFullYear(), currentMonth.getMonth())
@@ -143,7 +143,7 @@ export function MonthCalendar({
                 )
               }
               className={cn(
-                "relative flex flex-col items-center justify-center h-11 rounded-xl text-sm font-medium transition-colors outline-none",
+                "relative flex flex-col items-center justify-center h-11 rounded-lg text-sm font-medium transition-colors outline-none",
                 selected
                   ? "bg-primary text-primary-foreground font-bold"
                   : hasShiftDay
