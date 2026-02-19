@@ -6,7 +6,7 @@ import { supabase } from "@/lib/supabase"
 import { WORKPLACES } from "@/lib/types"
 import {
   Clock, MapPin, LogOut, Users, ChevronLeft, ChevronRight,
-  Pencil, Check, X as XIcon,
+  Pencil, Check, X as XIcon, UserPlus, Eye, EyeOff,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -111,6 +111,15 @@ export default function AdminPage() {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editName, setEditName] = useState("")
   const [saving, setSaving] = useState(false)
+
+  // Create courier
+  const [showCreateCourier, setShowCreateCourier] = useState(false)
+  const [newEmail, setNewEmail] = useState("")
+  const [newName, setNewName] = useState("")
+  const [newPassword, setNewPassword] = useState("")
+  const [showPassword, setShowPassword] = useState(false)
+  const [creating, setCreating] = useState(false)
+  const [createError, setCreateError] = useState<string | null>(null)
 
   // Confirming reserves
   const [confirmingId, setConfirmingId] = useState<string | null>(null)
@@ -232,6 +241,38 @@ export default function AdminPage() {
       setEditingId(null)
     }
     setSaving(false)
+  }
+
+  const handleCreateCourier = async () => {
+    if (!newEmail || !newPassword) return
+    setCreating(true)
+    setCreateError(null)
+
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) { setCreating(false); return }
+
+    const res = await fetch("/api/create-courier", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({ email: newEmail, name: newName, password: newPassword }),
+    })
+
+    const json = await res.json()
+    if (!res.ok) {
+      setCreateError(json.error || "Ошибка при создании")
+      setCreating(false)
+      return
+    }
+
+    setProfiles(prev => [...prev, json])
+    setShowCreateCourier(false)
+    setNewEmail("")
+    setNewName("")
+    setNewPassword("")
+    setCreating(false)
   }
 
   const confirmReserve = async (reserve: AdminReserve) => {
@@ -632,15 +673,15 @@ export default function AdminPage() {
       {/* ── COURIERS TAB ── */}
       {activeTab === "couriers" && (
         <div className="flex-1 overflow-y-auto px-4 pb-10">
-          <p className="text-xs text-muted-foreground mb-4">
-            Нажмите ✏️ чтобы задать имя курьеру (Фамилия Имя)
-          </p>
           {couriers.length === 0 ? (
-            <p className="text-center text-muted-foreground text-sm py-10">Нет курьеров</p>
+            <p className="text-center text-muted-foreground text-sm py-6">Нет курьеров</p>
           ) : (
-            <div className="flex flex-col gap-2">
-              {couriers.map(courier => (
-                <div key={courier.id} className="bg-secondary rounded-xl p-3">
+            <div className="rounded-2xl border border-border overflow-hidden bg-background mb-4">
+              <div className="px-4 py-4 border-b border-border">
+                <h3 className="text-base font-bold text-foreground">Курьеры</h3>
+              </div>
+              {couriers.map((courier, idx) => (
+                <div key={courier.id} className={cn("px-4 py-3", idx > 0 && "border-t border-border")}>
                   {editingId === courier.id ? (
                     <div className="flex items-center gap-2">
                       <input
@@ -661,7 +702,7 @@ export default function AdminPage() {
                       </button>
                       <button
                         onClick={() => setEditingId(null)}
-                        className="h-9 w-9 flex items-center justify-center rounded-xl bg-border text-foreground shrink-0"
+                        className="h-9 w-9 flex items-center justify-center rounded-xl bg-secondary text-foreground shrink-0"
                       >
                         <XIcon className="h-4 w-4" />
                       </button>
@@ -669,7 +710,7 @@ export default function AdminPage() {
                   ) : (
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-sm font-semibold text-foreground">
+                        <p className="text-sm font-medium text-foreground">
                           {courier.name
                             ? courier.name
                             : <span className="text-muted-foreground italic font-normal">Без имени</span>
@@ -682,7 +723,7 @@ export default function AdminPage() {
                           setEditingId(courier.id)
                           setEditName(courier.name || "")
                         }}
-                        className="h-9 w-9 flex items-center justify-center rounded-xl bg-background text-muted-foreground hover:text-foreground transition-colors"
+                        className="h-9 w-9 flex items-center justify-center rounded-xl bg-secondary text-muted-foreground hover:text-foreground transition-colors"
                       >
                         <Pencil className="h-4 w-4" />
                       </button>
@@ -692,6 +733,100 @@ export default function AdminPage() {
               ))}
             </div>
           )}
+
+          <button
+            onClick={() => { setShowCreateCourier(true); setCreateError(null) }}
+            className="w-full rounded-xl bg-primary py-3.5 text-sm font-semibold text-primary-foreground active:scale-[0.98] transition-transform flex items-center justify-center gap-2"
+          >
+            <UserPlus className="h-4 w-4" />
+            Добавить курьера
+          </button>
+        </div>
+      )}
+
+      {/* ── CREATE COURIER MODAL ── */}
+      {showCreateCourier && (
+        <div className="fixed inset-0 z-40 flex items-end justify-center">
+          <div className="absolute inset-0 bg-foreground/50" onClick={() => setShowCreateCourier(false)} />
+          <div className="relative w-full max-w-md bg-background rounded-t-2xl shadow-2xl animate-in slide-in-from-bottom duration-300">
+            {/* Drag handle */}
+            <div className="flex justify-center pt-3 pb-1">
+              <div className="h-1 w-10 rounded-full bg-border" />
+            </div>
+
+            {/* Header */}
+            <div className="flex items-center justify-between px-5 pb-4 pt-1">
+              <h2 className="text-xl font-bold text-foreground">Новый курьер</h2>
+              <button onClick={() => setShowCreateCourier(false)} className="p-1 text-foreground hover:text-muted-foreground">
+                <XIcon className="h-6 w-6" />
+              </button>
+            </div>
+
+            {/* Fields */}
+            <div className="px-5 pb-2 flex flex-col gap-4">
+              <div>
+                <label className="text-sm font-semibold text-foreground block mb-1.5">Имя (Фамилия Имя)</label>
+                <input
+                  type="text"
+                  value={newName}
+                  onChange={e => setNewName(e.target.value)}
+                  placeholder="Иванов Иван"
+                  className="w-full bg-secondary rounded-xl px-4 py-3 text-sm text-foreground outline-none focus:ring-2 focus:ring-primary/40"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-semibold text-foreground block mb-1.5">Email</label>
+                <input
+                  type="email"
+                  value={newEmail}
+                  onChange={e => setNewEmail(e.target.value)}
+                  placeholder="courier@example.com"
+                  autoCapitalize="none"
+                  className="w-full bg-secondary rounded-xl px-4 py-3 text-sm text-foreground outline-none focus:ring-2 focus:ring-primary/40"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-semibold text-foreground block mb-1.5">Пароль</label>
+                <div className="relative">
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    value={newPassword}
+                    onChange={e => setNewPassword(e.target.value)}
+                    placeholder="Минимум 6 символов"
+                    onKeyDown={e => { if (e.key === "Enter") handleCreateCourier() }}
+                    className="w-full bg-secondary rounded-xl px-4 py-3 pr-11 text-sm text-foreground outline-none focus:ring-2 focus:ring-primary/40"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground outline-none"
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+              </div>
+
+              {createError && (
+                <p className="text-sm text-destructive">{createError}</p>
+              )}
+            </div>
+
+            {/* Button */}
+            <div className="px-5 pb-8 pt-4">
+              <button
+                onClick={handleCreateCourier}
+                disabled={creating || !newEmail || !newPassword}
+                className={cn(
+                  "w-full rounded-xl py-3.5 text-sm font-semibold transition-all",
+                  !creating && newEmail && newPassword
+                    ? "bg-primary text-primary-foreground active:scale-[0.98]"
+                    : "bg-muted text-muted-foreground"
+                )}
+              >
+                {creating ? "Создание..." : "Создать курьера"}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
