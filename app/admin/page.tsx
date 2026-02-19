@@ -6,7 +6,7 @@ import { supabase } from "@/lib/supabase"
 import { WORKPLACES } from "@/lib/types"
 import {
   Clock, MapPin, LogOut, Users, ChevronLeft, ChevronRight,
-  ChevronDown, ChevronUp, Pencil, Check, X as XIcon,
+  Pencil, Check, X as XIcon,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -91,24 +91,6 @@ function getFirstDayOfMonth(year: number, month: number) {
   return day === 0 ? 6 : day - 1
 }
 
-function DateBlock({ date, children }: { date: string; children: React.ReactNode }) {
-  const [open, setOpen] = useState(true)
-  return (
-    <div className="mb-3">
-      <button
-        onClick={() => setOpen(!open)}
-        className="flex w-full items-center justify-between py-2"
-      >
-        <span className="text-base font-bold text-foreground">{formatDateHeader(date)}</span>
-        {open
-          ? <ChevronUp className="h-4 w-4 text-muted-foreground" />
-          : <ChevronDown className="h-4 w-4 text-muted-foreground" />
-        }
-      </button>
-      {open && <div className="flex flex-col gap-2">{children}</div>}
-    </div>
-  )
-}
 
 type Tab = "calendar" | "shifts" | "reserve" | "couriers"
 
@@ -348,26 +330,28 @@ export default function AdminPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1.5 px-4 pb-3">
-        {([
-          { key: "calendar", label: "Календарь" },
-          { key: "shifts",   label: "Выходы" },
-          { key: "reserve",  label: "Резервы" },
-          { key: "couriers", label: "Курьеры" },
-        ] as { key: Tab; label: string }[]).map(tab => (
-          <button
-            key={tab.key}
-            onClick={() => setActiveTab(tab.key)}
-            className={cn(
-              "flex-1 py-2 rounded-xl text-xs font-semibold transition-colors",
-              activeTab === tab.key
-                ? "bg-primary text-primary-foreground"
-                : "bg-secondary text-muted-foreground"
-            )}
-          >
-            {tab.label}
-          </button>
-        ))}
+      <div className="px-4 pb-3">
+        <div className="flex w-full rounded-xl bg-secondary p-1 gap-1">
+          {([
+            { key: "calendar", label: "Календарь" },
+            { key: "shifts",   label: "Выходы" },
+            { key: "reserve",  label: "Резервы" },
+            { key: "couriers", label: "Курьеры" },
+          ] as { key: Tab; label: string }[]).map(tab => (
+            <button
+              key={tab.key}
+              onClick={() => setActiveTab(tab.key)}
+              className={cn(
+                "flex-1 py-2 rounded-lg text-xs font-semibold transition-colors outline-none",
+                activeTab === tab.key
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "text-foreground/60"
+              )}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       <div className="h-px bg-border mx-4 mb-3" />
@@ -555,33 +539,39 @@ export default function AdminPage() {
             <p className="text-center text-muted-foreground text-sm py-10">
               Нет выходов в {MONTH_NAMES[currentMonth.getMonth()].toLowerCase()}
             </p>
-          ) : shiftDates.map(date => (
-            <DateBlock key={date} date={date}>
-              {shiftsByDate[date].map(shift => {
-                const wp = WORKPLACES.find(w => w.id === shift.workplace_id)
-                return (
-                  <div key={shift.id} className="bg-secondary rounded-xl p-3">
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-sm font-semibold text-foreground">
-                        {getCourierName(shift.user_id)}
-                      </span>
-                      <span className="flex items-center gap-1 text-xs font-semibold text-primary bg-primary/10 px-2 py-0.5 rounded-full">
-                        <Clock className="h-3 w-3" />
-                        {calcDuration(shift.time_from, shift.time_to)}
-                      </span>
-                    </div>
-                    <p className="text-sm text-foreground">{shift.time_from} — {shift.time_to}</p>
-                    {wp && (
-                      <div className="flex items-center gap-1 mt-1 text-xs text-muted-foreground">
-                        <MapPin className="h-3 w-3" />
-                        {wp.address}
+          ) : (
+            <div className="rounded-2xl border border-border overflow-hidden bg-background">
+              <div className="px-4 py-4 border-b border-border">
+                <h3 className="text-base font-bold text-foreground">Выходы</h3>
+              </div>
+              {shiftDates.map((date, dateIdx) => (
+                <div key={date} className={dateIdx > 0 ? "border-t border-border" : ""}>
+                  <p className="px-4 pt-3 pb-1 text-base font-bold text-foreground">{formatDateHeader(date)}</p>
+                  {shiftsByDate[date].map(shift => {
+                    const wp = WORKPLACES.find(w => w.id === shift.workplace_id)
+                    return (
+                      <div key={shift.id} className="flex items-center justify-between px-4 py-3 border-t border-border">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-sm font-medium text-foreground">
+                              {getCourierName(shift.user_id)}
+                            </span>
+                            <span className="flex items-center gap-1 text-xs font-semibold text-primary bg-primary/10 px-2 py-0.5 rounded-full">
+                              <Clock className="h-3 w-3" />
+                              {calcDuration(shift.time_from, shift.time_to)}
+                            </span>
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            {shift.time_from} — {shift.time_to}{wp && ` · ${wp.address}`}
+                          </p>
+                        </div>
                       </div>
-                    )}
-                  </div>
-                )
-              })}
-            </DateBlock>
-          ))}
+                    )
+                  })}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
@@ -592,41 +582,50 @@ export default function AdminPage() {
             <p className="text-center text-muted-foreground text-sm py-10">
               Нет резервов в {MONTH_NAMES[currentMonth.getMonth()].toLowerCase()}
             </p>
-          ) : reserveDates.map(date => (
-            <DateBlock key={date} date={date}>
-              {reservesByDate[date].map(reserve => (
-                <div key={reserve.id} className="bg-secondary rounded-xl p-3">
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-sm font-semibold text-foreground">
-                      {getCourierName(reserve.user_id)}
-                    </span>
-                    <span className={cn("text-xs px-2 py-0.5 rounded-md font-medium", statusColors[reserve.status] || "")}>
-                      {statusLabels[reserve.status] || reserve.status}
-                    </span>
-                  </div>
-                  <p className="text-sm text-foreground">{reserve.time_from} — {reserve.time_to}</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    {locationLabels[reserve.location] || reserve.location}
-                  </p>
-                  <div className="mt-2">
-                    {reserve.confirmed ? (
-                      <span className="text-xs font-semibold text-primary bg-primary/10 px-2.5 py-1 rounded-lg">
-                        ✓ Назначен
-                      </span>
-                    ) : reserve.status !== "cannot" && (
-                      <button
-                        onClick={() => confirmReserve(reserve)}
-                        disabled={confirmingId === reserve.id}
-                        className="text-xs font-semibold text-primary-foreground bg-primary px-3 py-1.5 rounded-lg disabled:opacity-60 transition-opacity"
-                      >
-                        {confirmingId === reserve.id ? "..." : "Назначить"}
-                      </button>
-                    )}
-                  </div>
+          ) : (
+            <div className="rounded-2xl border border-border overflow-hidden bg-background">
+              <div className="px-4 py-4 border-b border-border">
+                <h3 className="text-base font-bold text-foreground">Резервы</h3>
+              </div>
+              {reserveDates.map((date, dateIdx) => (
+                <div key={date} className={dateIdx > 0 ? "border-t border-border" : ""}>
+                  <p className="px-4 pt-3 pb-1 text-base font-bold text-foreground">{formatDateHeader(date)}</p>
+                  {reservesByDate[date].map(reserve => (
+                    <div key={reserve.id} className="flex items-center justify-between px-4 py-3 border-t border-border">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-sm font-medium text-foreground">
+                            {getCourierName(reserve.user_id)}
+                          </span>
+                          <span className={cn("text-xs px-2 py-0.5 rounded-full font-semibold", statusColors[reserve.status] || "")}>
+                            {statusLabels[reserve.status] || reserve.status}
+                          </span>
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          {reserve.time_from} — {reserve.time_to} · {locationLabels[reserve.location] || reserve.location}
+                        </p>
+                      </div>
+                      <div className="ml-3 shrink-0">
+                        {reserve.confirmed ? (
+                          <span className="text-xs font-semibold text-primary bg-primary/10 px-2.5 py-1 rounded-lg">
+                            ✓ Назначен
+                          </span>
+                        ) : reserve.status !== "cannot" && (
+                          <button
+                            onClick={() => confirmReserve(reserve)}
+                            disabled={confirmingId === reserve.id}
+                            className="text-xs font-semibold text-primary-foreground bg-primary px-3 py-1.5 rounded-lg disabled:opacity-60 transition-opacity outline-none"
+                          >
+                            {confirmingId === reserve.id ? "..." : "Назначить"}
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
                 </div>
               ))}
-            </DateBlock>
-          ))}
+            </div>
+          )}
         </div>
       )}
 
