@@ -133,6 +133,8 @@ export default function AdminPage() {
   // Hourly breakdown
   const [selectedHour, setSelectedHour] = useState<number | null>(null)
   const [selectedReserveHour, setSelectedReserveHour] = useState<number | null>(null)
+  const [shiftsHourlyOpen, setShiftsHourlyOpen] = useState(true)
+  const [reservesHourlyOpen, setReservesHourlyOpen] = useState(true)
 
   useEffect(() => {
     async function init() {
@@ -246,21 +248,6 @@ export default function AdminPage() {
   const monthShifts = useMemo(() => shifts.filter(s => s.date.startsWith(monthPrefix)), [shifts, monthPrefix])
   const monthReserves = useMemo(() => reserves.filter(r => r.date.startsWith(monthPrefix)), [reserves, monthPrefix])
 
-  // List data (filtered by month)
-  const shiftsByDate = useMemo(() => monthShifts.reduce<Record<string, AdminShift[]>>((acc, s) => {
-    if (!acc[s.date]) acc[s.date] = []
-    acc[s.date].push(s)
-    return acc
-  }, {}), [monthShifts])
-
-  const reservesByDate = useMemo(() => monthReserves.reduce<Record<string, AdminReserve[]>>((acc, r) => {
-    if (!acc[r.date]) acc[r.date] = []
-    acc[r.date].push(r)
-    return acc
-  }, {}), [monthReserves])
-
-  const shiftDates = Object.keys(shiftsByDate).sort()
-  const reserveDates = Object.keys(reservesByDate).sort()
   const couriers = profiles.filter(p => p.role !== "admin")
 
   // Save courier name
@@ -435,15 +422,13 @@ export default function AdminPage() {
 
       <div className="h-px bg-border mx-4 mb-3" />
 
-      {/* ── CALENDAR TAB ── */}
-      {activeTab === "calendar" && (
+      {/* ── CALENDAR / SHIFTS / RESERVES TABS — shared calendar grid ── */}
+      {(activeTab === "calendar" || activeTab === "shifts" || activeTab === "reserve") && (
         <div className="flex-1 overflow-y-auto px-4 pb-10">
           {/* Weekday headers */}
           <div className="grid grid-cols-7 mb-1">
             {WEEKDAY_LABELS.map(l => (
-              <div key={l} className="text-center text-xs text-muted-foreground font-medium py-1">
-                {l}
-              </div>
+              <div key={l} className="text-center text-xs text-muted-foreground font-medium py-1">{l}</div>
             ))}
           </div>
 
@@ -456,43 +441,26 @@ export default function AdminPage() {
               const statuses = reserveStatusesByDate.get(dateStr)
               const selected = isSelectedDay(day)
               const hasData = count > 0 || !!statuses
-
               return (
                 <button
                   key={day}
-                  onClick={() =>
-                    { setSelectedDate(new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day)); setSelectedHour(null); setSelectedReserveHour(null) }
-                  }
+                  onClick={() => { setSelectedDate(new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day)); setSelectedHour(null); setSelectedReserveHour(null); setShiftsHourlyOpen(true); setReservesHourlyOpen(true) }}
                   className={cn(
                     "relative flex flex-col items-center justify-center h-12 rounded-xl text-sm font-medium transition-colors border",
-                    selected
-                      ? "bg-primary text-primary-foreground font-bold border-transparent"
-                      : hasData
-                        ? "bg-secondary border-transparent"
-                        : "text-foreground hover:bg-secondary border-transparent"
+                    selected ? "bg-primary text-primary-foreground font-bold border-transparent"
+                      : hasData ? "bg-secondary border-transparent"
+                      : "text-foreground hover:bg-secondary border-transparent"
                   )}
                 >
                   <span>{day}</span>
-
-                  {/* Shift count badge */}
                   {count > 0 && !selected && (
-                    <span className="absolute top-0.5 right-0.5 h-4 min-w-4 px-0.5 text-[9px] font-bold bg-primary text-primary-foreground rounded-full flex items-center justify-center">
-                      {count}
-                    </span>
+                    <span className="absolute top-0.5 right-0.5 h-4 min-w-4 px-0.5 text-[9px] font-bold bg-primary text-primary-foreground rounded-full flex items-center justify-center">{count}</span>
                   )}
-
-                  {/* Reserve status dots */}
                   {statuses && !selected && (
                     <div className="absolute bottom-0.5 flex gap-0.5">
-                      {statuses.has("can") && (
-                        <span className="h-1 w-1 rounded-full bg-primary" />
-                      )}
-                      {statuses.has("if_needed") && (
-                        <span className="h-1 w-1 rounded-full bg-[#f5c518]" />
-                      )}
-                      {statuses.has("cannot") && (
-                        <span className="h-1 w-1 rounded-full bg-destructive" />
-                      )}
+                      {statuses.has("can") && <span className="h-1 w-1 rounded-full bg-primary" />}
+                      {statuses.has("if_needed") && <span className="h-1 w-1 rounded-full bg-[#f5c518]" />}
+                      {statuses.has("cannot") && <span className="h-1 w-1 rounded-full bg-destructive" />}
                     </div>
                   )}
                 </button>
@@ -503,9 +471,7 @@ export default function AdminPage() {
           {/* Legend */}
           <div className="flex items-center justify-center gap-5 mt-3 text-xs text-muted-foreground">
             <div className="flex items-center gap-1.5">
-              <span className="h-4 w-4 text-[9px] font-bold bg-primary text-primary-foreground rounded-full flex items-center justify-center">
-                N
-              </span>
+              <span className="h-4 w-4 text-[9px] font-bold bg-primary text-primary-foreground rounded-full flex items-center justify-center">N</span>
               <span>кол-во выходов</span>
             </div>
             <div className="flex items-center gap-1.5">
@@ -516,6 +482,11 @@ export default function AdminPage() {
             </div>
           </div>
 
+          {/* Prompt when no date selected on shifts/reserve tabs */}
+          {!selectedDate && (activeTab === "shifts" || activeTab === "reserve") && (
+            <p className="text-center text-muted-foreground text-sm py-6 mt-3">Выберите день в календаре</p>
+          )}
+
           {/* Selected day details */}
           {selectedDate && (
             <div className="mt-5">
@@ -523,13 +494,17 @@ export default function AdminPage() {
                 {formatDateHeader(toDateStr(selectedDate))}
               </h3>
 
-              {selectedShifts.length === 0 && selectedReserves.length === 0 && (
-                <p className="text-sm text-muted-foreground text-center py-6">
-                  Нет записей на этот день
-                </p>
+              {activeTab === "calendar" && selectedShifts.length === 0 && selectedReserves.length === 0 && (
+                <p className="text-sm text-muted-foreground text-center py-6">Нет записей на этот день</p>
+              )}
+              {activeTab === "shifts" && selectedShifts.length === 0 && (
+                <p className="text-sm text-muted-foreground text-center py-6">Нет выходов на этот день</p>
+              )}
+              {activeTab === "reserve" && selectedReserves.length === 0 && (
+                <p className="text-sm text-muted-foreground text-center py-6">Нет резервов на этот день</p>
               )}
 
-              {selectedShifts.length > 0 && (
+              {(activeTab === "calendar" || activeTab === "shifts") && selectedShifts.length > 0 && (
                 <div className="mb-4 rounded-2xl border border-border overflow-hidden bg-background">
                   <div className="px-4 py-3 border-b border-border">
                     <h3 className="text-sm font-bold text-foreground">Выходы</h3>
@@ -558,14 +533,18 @@ export default function AdminPage() {
                 </div>
               )}
 
-              {selectedShifts.length > 0 && (() => {
+              {(activeTab === "calendar" || activeTab === "shifts") && selectedShifts.length > 0 && (() => {
                 const maxCount = Math.max(...hourlyBreakdown.map(s => s.couriers.length), 1)
                 return (
                   <div className="mb-4 rounded-2xl border border-border overflow-hidden bg-background">
-                    <div className="px-4 py-3 border-b border-border">
+                    <button
+                      onClick={() => setShiftsHourlyOpen(!shiftsHourlyOpen)}
+                      className="w-full flex items-center justify-between px-4 py-3 border-b border-border"
+                    >
                       <h3 className="text-sm font-bold text-foreground">Выходы по часам</h3>
-                    </div>
-                    {hourlyBreakdown.map((slot, idx) => {
+                      <ChevronDown className={cn("h-4 w-4 text-muted-foreground transition-transform", shiftsHourlyOpen && "rotate-180")} />
+                    </button>
+                    {shiftsHourlyOpen && hourlyBreakdown.map((slot, idx) => {
                       const empty = slot.couriers.length === 0
                       return (
                         <div key={slot.hour}>
@@ -611,7 +590,7 @@ export default function AdminPage() {
                 )
               })()}
 
-              {selectedReserves.length > 0 && (
+              {(activeTab === "calendar" || activeTab === "reserve") && selectedReserves.length > 0 && (
                 <div className="rounded-2xl border border-border overflow-hidden bg-background">
                   <div className="px-4 py-3 border-b border-border">
                     <h3 className="text-sm font-bold text-foreground">Резервы</h3>
@@ -661,14 +640,18 @@ export default function AdminPage() {
                 </div>
               )}
 
-              {selectedReserves.some(r => r.status !== "vacation" && r.status !== "sick_leave") && (() => {
+              {(activeTab === "calendar" || activeTab === "reserve") && selectedReserves.some(r => r.status !== "vacation" && r.status !== "sick_leave") && (() => {
                 const maxCount = Math.max(...hourlyReserveBreakdown.map(s => s.reserves.length), 1)
                 return (
                   <div className="mt-4 rounded-2xl border border-border overflow-hidden bg-background">
-                    <div className="px-4 py-3 border-b border-border">
+                    <button
+                      onClick={() => setReservesHourlyOpen(!reservesHourlyOpen)}
+                      className="w-full flex items-center justify-between px-4 py-3 border-b border-border"
+                    >
                       <h3 className="text-sm font-bold text-foreground">Резервы по часам</h3>
-                    </div>
-                    {hourlyReserveBreakdown.map((slot, idx) => {
+                      <ChevronDown className={cn("h-4 w-4 text-muted-foreground transition-transform", reservesHourlyOpen && "rotate-180")} />
+                    </button>
+                    {reservesHourlyOpen && hourlyReserveBreakdown.map((slot, idx) => {
                       const empty = slot.reserves.length === 0
                       const canCount = slot.reserves.filter(r => r.status === "can").length
                       const ifCount = slot.reserves.filter(r => r.status === "if_needed").length
@@ -730,114 +713,6 @@ export default function AdminPage() {
                   </div>
                 )
               })()}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* ── SHIFTS TAB ── */}
-      {activeTab === "shifts" && (
-        <div className="flex-1 overflow-y-auto px-4 pb-10">
-          {shiftDates.length === 0 ? (
-            <p className="text-center text-muted-foreground text-sm py-10">
-              Нет выходов в {MONTH_NAMES[currentMonth.getMonth()].toLowerCase()}
-            </p>
-          ) : (
-            <div className="rounded-2xl border border-border overflow-hidden bg-background">
-              <div className="px-4 py-4 border-b border-border">
-                <h3 className="text-base font-bold text-foreground">Выходы</h3>
-              </div>
-              {shiftDates.map((date, dateIdx) => (
-                <div key={date} className={dateIdx > 0 ? "border-t border-border" : ""}>
-                  <p className="px-4 pt-3 pb-1 text-base font-bold text-foreground">{formatDateHeader(date)}</p>
-                  {shiftsByDate[date].map(shift => {
-                    const wp = WORKPLACES.find(w => w.id === shift.workplace_id)
-                    return (
-                      <div key={shift.id} className="flex items-center justify-between px-4 py-3 border-t border-border">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="text-sm font-medium text-foreground">
-                              {getCourierName(shift.user_id)}
-                            </span>
-                            <span className="flex items-center gap-1 text-xs font-semibold text-primary bg-primary/10 px-2 py-0.5 rounded-full">
-                              <Clock className="h-3 w-3" />
-                              {calcDuration(shift.time_from, shift.time_to)}
-                            </span>
-                          </div>
-                          <p className="text-xs text-muted-foreground">
-                            {shift.time_from} — {shift.time_to}{wp && ` · ${wp.address}`}
-                          </p>
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* ── RESERVES TAB ── */}
-      {activeTab === "reserve" && (
-        <div className="flex-1 overflow-y-auto px-4 pb-10">
-          {reserveDates.length === 0 ? (
-            <p className="text-center text-muted-foreground text-sm py-10">
-              Нет резервов в {MONTH_NAMES[currentMonth.getMonth()].toLowerCase()}
-            </p>
-          ) : (
-            <div className="rounded-2xl border border-border overflow-hidden bg-background">
-              <div className="px-4 py-4 border-b border-border">
-                <h3 className="text-base font-bold text-foreground">Резервы</h3>
-              </div>
-              {reserveDates.map((date, dateIdx) => (
-                <div key={date} className={dateIdx > 0 ? "border-t border-border" : ""}>
-                  <p className="px-4 pt-3 pb-1 text-base font-bold text-foreground">{formatDateHeader(date)}</p>
-                  {reservesByDate[date].map(reserve => {
-                    const isAbsence = reserve.status === "vacation" || reserve.status === "sick_leave"
-                    return (
-                      <div key={reserve.id} className="flex items-center justify-between px-4 py-3 border-t border-border">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="text-sm font-medium text-foreground">
-                              {getCourierName(reserve.user_id)}
-                            </span>
-                            <span className={cn("text-xs px-2 py-0.5 rounded-full font-semibold", statusColors[reserve.status] || "")}>
-                              {statusLabels[reserve.status] || reserve.status}
-                            </span>
-                          </div>
-                          <p className="text-xs text-muted-foreground">
-                            {isAbsence
-                              ? reserve.date_to ? `до ${formatDateHeader(reserve.date_to)}` : ""
-                              : `${reserve.time_from} — ${reserve.time_to} · ${locationLabels[reserve.location] || reserve.location}`
-                            }
-                          </p>
-                          {reserve.comment && (
-                            <p className="text-xs text-muted-foreground mt-0.5 italic">{reserve.comment}</p>
-                          )}
-                        </div>
-                        {!isAbsence && (
-                          <div className="ml-3 shrink-0">
-                            {reserve.confirmed ? (
-                              <span className="text-xs font-semibold text-primary bg-primary/10 px-2.5 py-1 rounded-lg">
-                                ✓ Назначен
-                              </span>
-                            ) : reserve.status !== "cannot" && (
-                              <button
-                                onClick={() => confirmReserve(reserve)}
-                                disabled={confirmingId === reserve.id}
-                                className="text-xs font-semibold text-primary-foreground bg-primary px-3 py-1.5 rounded-lg disabled:opacity-60 transition-opacity outline-none"
-                              >
-                                {confirmingId === reserve.id ? "..." : "Назначить"}
-                              </button>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    )
-                  })}
-                </div>
-              ))}
             </div>
           )}
         </div>
