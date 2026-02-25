@@ -19,6 +19,7 @@ interface EditData {
   repeat: boolean
   repeatDays?: number[]
   repeatUntil?: string
+  comment?: string
 }
 
 interface PlanReserveModalProps {
@@ -34,6 +35,7 @@ interface PlanReserveModalProps {
     repeat: boolean
     repeatDays: number[]
     repeatUntil?: string
+    comment?: string
   }) => void
   editData?: EditData
   onDelete?: (id: string) => void
@@ -96,9 +98,11 @@ export function PlanReserveModal({ isOpen, onClose, onSubmit, editData, onDelete
   const [showDatePicker, setShowDatePicker] = useState(false)
   const [showDateToPicker, setShowDateToPicker] = useState(false)
   const [showRepeatUntilPicker, setShowRepeatUntilPicker] = useState(false)
+  const [comment, setComment] = useState("")
 
   const isEditMode = !!editData
   const isAbsence = status === "vacation" || status === "sick_leave"
+  const isCannot = status === "cannot"
 
   useEffect(() => {
     if (isOpen && editData) {
@@ -111,6 +115,7 @@ export function PlanReserveModal({ isOpen, onClose, onSubmit, editData, onDelete
       setRepeat(editData.repeat)
       setRepeatDays(editData.repeatDays || [])
       setRepeatUntil(editData.repeatUntil ? parseISODate(editData.repeatUntil) : null)
+      setComment(editData.comment || "")
     } else if (isOpen && initialDate) {
       setSelectedDate(initialDate)
     }
@@ -124,6 +129,7 @@ export function PlanReserveModal({ isOpen, onClose, onSubmit, editData, onDelete
       setRepeat(false)
       setRepeatDays([])
       setRepeatUntil(null)
+      setComment("")
     }
   }, [isOpen]) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -131,7 +137,9 @@ export function PlanReserveModal({ isOpen, onClose, onSubmit, editData, onDelete
 
   const isValid = isAbsence
     ? !!(selectedDate && status)
-    : !!(selectedDate && timeFrom && timeTo && status && location)
+    : isCannot
+      ? !!(selectedDate && timeFrom && timeTo && status && location && comment.trim())
+      : !!(selectedDate && timeFrom && timeTo && status && location)
 
   const handleSubmit = () => {
     if (!isValid) return
@@ -156,6 +164,7 @@ export function PlanReserveModal({ isOpen, onClose, onSubmit, editData, onDelete
         repeat,
         repeatDays,
         repeatUntil: repeatUntil ? toISODate(repeatUntil) : undefined,
+        comment: isCannot ? comment.trim() : undefined,
       })
     }
     onClose()
@@ -282,6 +291,22 @@ export function PlanReserveModal({ isOpen, onClose, onSubmit, editData, onDelete
                     </button>
                   ))}
                 </div>
+              </div>
+            )}
+
+            {/* Comment — required for "cannot" */}
+            {isCannot && (
+              <div className="mb-5">
+                <label className="text-base font-bold text-foreground block mb-2">
+                  Причина <span className="text-destructive">*</span>
+                </label>
+                <textarea
+                  value={comment}
+                  onChange={e => setComment(e.target.value)}
+                  placeholder="Укажите причину..."
+                  rows={3}
+                  className="w-full rounded-xl bg-secondary px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground resize-none outline-none focus:ring-1 focus:ring-destructive/50"
+                />
               </div>
             )}
 

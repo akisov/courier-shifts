@@ -36,6 +36,7 @@ interface AdminReserve {
   status: string
   location: string
   confirmed?: boolean
+  comment?: string
 }
 
 const MONTH_NAMES = [
@@ -552,6 +553,9 @@ export default function AdminPage() {
                             <p className="text-xs text-muted-foreground">
                               {reserve.time_from} — {reserve.time_to} · {locationLabels[reserve.location] || reserve.location}
                             </p>
+                            {reserve.comment && (
+                              <p className="text-xs text-muted-foreground mt-0.5 italic">{reserve.comment}</p>
+                            )}
                             <div className="mt-2">
                               {reserve.confirmed ? (
                                 <span className="text-xs font-semibold text-primary bg-primary/10 px-2.5 py-1 rounded-lg">✓ Назначен</span>
@@ -654,6 +658,9 @@ export default function AdminPage() {
                               : `${reserve.time_from} — ${reserve.time_to} · ${locationLabels[reserve.location] || reserve.location}`
                             }
                           </p>
+                          {reserve.comment && (
+                            <p className="text-xs text-muted-foreground mt-0.5 italic">{reserve.comment}</p>
+                          )}
                         </div>
                         {!isAbsence && (
                           <div className="ml-3 shrink-0">

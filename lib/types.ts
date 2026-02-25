@@ -33,6 +33,7 @@ export interface PlannedReserve {
   repeatDays?: number[]
   repeatUntil?: string
   updatedAt?: string
+  comment?: string
 }
 
 export interface ShiftEntry {

@@ -46,6 +46,7 @@ export function useAppStore() {
           repeatDays: r.repeat_days,
           repeatUntil: r.repeat_until,
           updatedAt: r.updated_at ?? undefined,
+          comment: r.comment ?? undefined,
         })))
       }
 
@@ -100,6 +101,7 @@ export function useAppStore() {
       repeat: reserve.repeat,
       repeat_days: reserve.repeatDays,
       repeat_until: reserve.repeatUntil,
+      comment: reserve.comment ?? null,
     }).select().single()
 
     if (!error && data) {
@@ -115,6 +117,7 @@ export function useAppStore() {
         repeatDays: data.repeat_days,
         repeatUntil: data.repeat_until,
         updatedAt: data.updated_at ?? undefined,
+        comment: data.comment ?? undefined,
       }])
     }
   }, [])
@@ -156,6 +159,7 @@ export function useAppStore() {
       repeat: reserve.repeat,
       repeat_days: reserve.repeatDays,
       repeat_until: reserve.repeatUntil,
+      comment: reserve.comment ?? null,
       updated_at: now,
     }).eq("id", id)
 

@@ -320,6 +320,9 @@ function ReserveList({
                         }
                         {reserve.updatedAt && <span> · {fmtUpdatedAt(reserve.updatedAt)}</span>}
                       </p>
+                      {reserve.comment && (
+                        <p className="text-xs text-muted-foreground mt-0.5 italic">{reserve.comment}</p>
+                      )}
                     </div>
                     <button
                       onClick={() => onEdit(reserve)}
