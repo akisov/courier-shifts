@@ -17,6 +17,7 @@ export interface PlannedShift {
   repeat: boolean
   repeatDays?: number[]
   repeatUntil?: string
+  confirmedByAdmin?: boolean
 }
 
 export interface PlannedReserve {

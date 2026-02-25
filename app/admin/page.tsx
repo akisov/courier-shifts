@@ -292,6 +292,7 @@ export default function AdminPage() {
       time_to: reserve.time_to,
       workplace_id: null,
       repeat: false,
+      confirmed_by_admin: true,
     })
 
     await supabase.from("planned_reserves").update({

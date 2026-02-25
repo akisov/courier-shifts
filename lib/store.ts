@@ -28,6 +28,7 @@ export function useAppStore() {
           repeat: r.repeat,
           repeatDays: r.repeat_days,
           repeatUntil: r.repeat_until,
+          confirmedByAdmin: r.confirmed_by_admin ?? false,
         })))
       }
 

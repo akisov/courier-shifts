@@ -200,18 +200,25 @@ function PlannedShiftList({
                           <Clock className="h-3 w-3" />
                           {duration}
                         </span>
+                        {shift.confirmedByAdmin && (
+                          <span className="text-xs font-semibold text-primary bg-primary/10 px-2 py-0.5 rounded-full">
+                            Назначен
+                          </span>
+                        )}
                       </div>
                       {workplace && (
                         <p className="text-xs text-muted-foreground">{workplace.address}</p>
                       )}
                     </div>
-                    <button
-                      onClick={() => onEdit(shift)}
-                      className="ml-3 h-9 w-9 flex items-center justify-center rounded-xl bg-secondary text-muted-foreground hover:text-foreground transition-colors outline-none"
-                      aria-label="Редактировать"
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </button>
+                    {!shift.confirmedByAdmin && (
+                      <button
+                        onClick={() => onEdit(shift)}
+                        className="ml-3 h-9 w-9 flex items-center justify-center rounded-xl bg-secondary text-muted-foreground hover:text-foreground transition-colors outline-none"
+                        aria-label="Редактировать"
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </button>
+                    )}
                   </div>
                 )
               })}
