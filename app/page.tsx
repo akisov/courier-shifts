@@ -152,6 +152,16 @@ function calcDuration(from: string, to: string): string {
   return m > 0 ? `${h}ч ${m}м` : `${h} ч`
 }
 
+function fmtUpdatedAt(iso: string): string {
+  const d = new Date(iso)
+  const months = ["янв", "фев", "мар", "апр", "мая", "июн", "июл", "авг", "сен", "окт", "ноя", "дек"]
+  const dd = d.getDate()
+  const mon = months[d.getMonth()]
+  const hh = String(d.getHours()).padStart(2, "0")
+  const mm = String(d.getMinutes()).padStart(2, "0")
+  return `изм. ${dd} ${mon}, ${hh}:${mm}`
+}
+
 function PlannedShiftList({
   plannedShifts,
   onEdit,
@@ -206,9 +216,10 @@ function PlannedShiftList({
                           </span>
                         )}
                       </div>
-                      {workplace && (
-                        <p className="text-xs text-muted-foreground">{workplace.address}</p>
-                      )}
+                      <p className="text-xs text-muted-foreground">
+                        {workplace ? workplace.address : ""}
+                        {shift.updatedAt && <span className={workplace ? " · " : ""}>{fmtUpdatedAt(shift.updatedAt)}</span>}
+                      </p>
                     </div>
                     {!shift.confirmedByAdmin && (
                       <button
@@ -307,6 +318,7 @@ function ReserveList({
                           ? reserve.dateTo ? `${fmtShort(reserve.date)} — ${fmtShort(reserve.dateTo)}` : fmtShort(reserve.date)
                           : locationLabels[reserve.location] || reserve.location
                         }
+                        {reserve.updatedAt && <span> · {fmtUpdatedAt(reserve.updatedAt)}</span>}
                       </p>
                     </div>
                     <button

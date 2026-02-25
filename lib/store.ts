@@ -29,6 +29,7 @@ export function useAppStore() {
           repeatDays: r.repeat_days,
           repeatUntil: r.repeat_until,
           confirmedByAdmin: r.confirmed_by_admin ?? false,
+          updatedAt: r.updated_at ?? undefined,
         })))
       }
 
@@ -44,6 +45,7 @@ export function useAppStore() {
           repeat: r.repeat,
           repeatDays: r.repeat_days,
           repeatUntil: r.repeat_until,
+          updatedAt: r.updated_at ?? undefined,
         })))
       }
 
@@ -78,6 +80,7 @@ export function useAppStore() {
         repeat: data.repeat,
         repeatDays: data.repeat_days,
         repeatUntil: data.repeat_until,
+        updatedAt: data.updated_at ?? undefined,
       }])
     }
   }, [])
@@ -111,11 +114,13 @@ export function useAppStore() {
         repeat: data.repeat,
         repeatDays: data.repeat_days,
         repeatUntil: data.repeat_until,
+        updatedAt: data.updated_at ?? undefined,
       }])
     }
   }, [])
 
   const updatePlannedShift = useCallback(async (id: string, shift: Omit<PlannedShift, "id">) => {
+    const now = new Date().toISOString()
     const { error } = await supabase.from("planned_shifts").update({
       date: shift.date,
       time_from: shift.timeFrom,
@@ -124,10 +129,11 @@ export function useAppStore() {
       repeat: shift.repeat,
       repeat_days: shift.repeatDays,
       repeat_until: shift.repeatUntil,
+      updated_at: now,
     }).eq("id", id)
 
     if (!error) {
-      setPlannedShifts(prev => prev.map(s => s.id === id ? { ...shift, id } : s))
+      setPlannedShifts(prev => prev.map(s => s.id === id ? { ...shift, id, updatedAt: now } : s))
     }
   }, [])
 
@@ -139,6 +145,7 @@ export function useAppStore() {
   }, [])
 
   const updatePlannedReserve = useCallback(async (id: string, reserve: Omit<PlannedReserve, "id">) => {
+    const now = new Date().toISOString()
     const { error } = await supabase.from("planned_reserves").update({
       date: reserve.date,
       date_to: reserve.dateTo ?? null,
@@ -149,10 +156,11 @@ export function useAppStore() {
       repeat: reserve.repeat,
       repeat_days: reserve.repeatDays,
       repeat_until: reserve.repeatUntil,
+      updated_at: now,
     }).eq("id", id)
 
     if (!error) {
-      setPlannedReserves(prev => prev.map(r => r.id === id ? { ...reserve, id } : r))
+      setPlannedReserves(prev => prev.map(r => r.id === id ? { ...reserve, id, updatedAt: now } : r))
     }
   }, [])
 
