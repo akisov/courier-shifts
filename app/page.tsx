@@ -12,7 +12,7 @@ import { useAppStore } from "@/lib/store"
 import { supabase } from "@/lib/supabase"
 import { WORKPLACES } from "@/lib/types"
 import type { PlannedShift, PlannedReserve } from "@/lib/types"
-import { Clock, Pencil } from "lucide-react"
+import { Clock, Pencil, History } from "lucide-react"
 
 export default function HomePage() {
   const router = useRouter()
@@ -216,10 +216,19 @@ function PlannedShiftList({
                           </span>
                         )}
                       </div>
-                      <p className="text-xs text-muted-foreground">
-                        {workplace ? workplace.address : ""}
-                        {shift.updatedAt && <span className={workplace ? " · " : ""}>{fmtUpdatedAt(shift.updatedAt)}</span>}
-                      </p>
+                      {(workplace || shift.updatedAt) && (
+                        <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
+                          {workplace && (
+                            <span className="text-xs text-muted-foreground">{workplace.address}</span>
+                          )}
+                          {shift.updatedAt && (
+                            <span className="inline-flex items-center gap-1 text-xs text-muted-foreground bg-secondary px-2 py-0.5 rounded-full">
+                              <History className="h-3 w-3" />
+                              {fmtUpdatedAt(shift.updatedAt)}
+                            </span>
+                          )}
+                        </div>
+                      )}
                     </div>
                     {!shift.confirmedByAdmin && (
                       <button
@@ -313,13 +322,20 @@ function ReserveList({
                           {statusLabels[reserve.status] || reserve.status}
                         </span>
                       </div>
-                      <p className="text-xs text-muted-foreground">
-                        {isAbsence
-                          ? reserve.dateTo ? `${fmtShort(reserve.date)} — ${fmtShort(reserve.dateTo)}` : fmtShort(reserve.date)
-                          : locationLabels[reserve.location] || reserve.location
-                        }
-                        {reserve.updatedAt && <span> · {fmtUpdatedAt(reserve.updatedAt)}</span>}
-                      </p>
+                      <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
+                        <span className="text-xs text-muted-foreground">
+                          {isAbsence
+                            ? reserve.dateTo ? `${fmtShort(reserve.date)} — ${fmtShort(reserve.dateTo)}` : fmtShort(reserve.date)
+                            : locationLabels[reserve.location] || reserve.location
+                          }
+                        </span>
+                        {reserve.updatedAt && (
+                          <span className="inline-flex items-center gap-1 text-xs text-muted-foreground bg-secondary px-2 py-0.5 rounded-full">
+                            <History className="h-3 w-3" />
+                            {fmtUpdatedAt(reserve.updatedAt)}
+                          </span>
+                        )}
+                      </div>
                       {reserve.comment && (
                         <p className="text-xs text-muted-foreground mt-0.5 italic">{reserve.comment}</p>
                       )}
