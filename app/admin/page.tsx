@@ -6,7 +6,7 @@ import { supabase } from "@/lib/supabase"
 import { WORKPLACES } from "@/lib/types"
 import {
   Clock, MapPin, LogOut, Users, ChevronLeft, ChevronRight,
-  Pencil, Check, X as XIcon, UserPlus, Eye, EyeOff,
+  Pencil, Check, X as XIcon, UserPlus, Eye, EyeOff, ChevronDown,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -130,6 +130,9 @@ export default function AdminPage() {
   // Confirming reserves
   const [confirmingId, setConfirmingId] = useState<string | null>(null)
 
+  // Hourly breakdown
+  const [selectedHour, setSelectedHour] = useState<number | null>(null)
+
   useEffect(() => {
     async function init() {
       setLoading(true)
@@ -207,6 +210,27 @@ export default function AdminPage() {
   const selectedDateStr = selectedDate ? toDateStr(selectedDate) : null
   const selectedShifts = selectedDateStr ? shifts.filter(s => s.date === selectedDateStr) : []
   const selectedReserves = selectedDateStr ? reserves.filter(r => r.date === selectedDateStr) : []
+
+  const hourlyBreakdown = useMemo(() => {
+    if (selectedShifts.length === 0) return []
+    let minHour = 24, maxHour = 0
+    selectedShifts.forEach(s => {
+      const [fh] = s.time_from.split(":").map(Number)
+      const [th] = s.time_to.split(":").map(Number)
+      minHour = Math.min(minHour, fh)
+      maxHour = Math.max(maxHour, th)
+    })
+    const slots = []
+    for (let h = minHour; h < maxHour; h++) {
+      const active = selectedShifts.filter(s => {
+        const [fh, fm] = s.time_from.split(":").map(Number)
+        const [th, tm] = s.time_to.split(":").map(Number)
+        return (fh * 60 + fm) < (h + 1) * 60 && (th * 60 + tm) > h * 60
+      })
+      if (active.length > 0) slots.push({ hour: h, couriers: active })
+    }
+    return slots
+  }, [selectedShifts])
 
   // Month prefix for filtering
   const monthPrefix = `${currentMonth.getFullYear()}-${(currentMonth.getMonth() + 1).toString().padStart(2, "0")}`
@@ -430,7 +454,7 @@ export default function AdminPage() {
                 <button
                   key={day}
                   onClick={() =>
-                    setSelectedDate(new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day))
+                    { setSelectedDate(new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day)); setSelectedHour(null) }
                   }
                   className={cn(
                     "relative flex flex-col items-center justify-center h-12 rounded-xl text-sm font-medium transition-colors border",
@@ -526,6 +550,61 @@ export default function AdminPage() {
                   })}
                 </div>
               )}
+
+              {hourlyBreakdown.length > 0 && (() => {
+                const maxCount = Math.max(...hourlyBreakdown.map(s => s.couriers.length))
+                return (
+                  <div className="mb-4 rounded-2xl border border-border overflow-hidden bg-background">
+                    <div className="px-4 py-3 border-b border-border">
+                      <h3 className="text-sm font-bold text-foreground">По часам</h3>
+                    </div>
+                    {hourlyBreakdown.map((slot, idx) => (
+                      <div key={slot.hour}>
+                        <button
+                          onClick={() => setSelectedHour(selectedHour === slot.hour ? null : slot.hour)}
+                          className={cn(
+                            "w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors",
+                            idx > 0 && "border-t border-border",
+                            selectedHour === slot.hour ? "bg-secondary" : "hover:bg-secondary/50"
+                          )}
+                        >
+                          <span className="text-xs font-mono text-muted-foreground w-10 shrink-0">
+                            {String(slot.hour).padStart(2, "0")}:00
+                          </span>
+                          <div className="flex-1 h-4 bg-secondary rounded-full overflow-hidden">
+                            <div
+                              className="h-full bg-primary/50 rounded-full transition-all duration-300"
+                              style={{ width: `${(slot.couriers.length / maxCount) * 100}%` }}
+                            />
+                          </div>
+                          <span className="text-xs font-semibold text-foreground w-12 text-right shrink-0">
+                            {slot.couriers.length} чел.
+                          </span>
+                          <ChevronDown className={cn(
+                            "h-3.5 w-3.5 text-muted-foreground shrink-0 transition-transform",
+                            selectedHour === slot.hour && "rotate-180"
+                          )} />
+                        </button>
+                        {selectedHour === slot.hour && (
+                          <div className="px-4 py-2.5 bg-secondary/50 border-t border-border flex flex-wrap gap-1.5">
+                            {slot.couriers.map(s => (
+                              <span
+                                key={s.id}
+                                className="inline-flex items-center text-xs font-medium text-foreground bg-background px-2.5 py-1 rounded-lg border border-border"
+                              >
+                                {getCourierName(s.user_id)}
+                                <span className="ml-1.5 text-muted-foreground">
+                                  {s.time_from}–{s.time_to}
+                                </span>
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )
+              })()}
 
               {selectedReserves.length > 0 && (
                 <div className="rounded-2xl border border-border overflow-hidden bg-background">
