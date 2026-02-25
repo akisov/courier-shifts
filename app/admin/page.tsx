@@ -132,6 +132,7 @@ export default function AdminPage() {
 
   // Hourly breakdown
   const [selectedHour, setSelectedHour] = useState<number | null>(null)
+  const [selectedReserveHour, setSelectedReserveHour] = useState<number | null>(null)
 
   useEffect(() => {
     async function init() {
@@ -212,25 +213,31 @@ export default function AdminPage() {
   const selectedReserves = selectedDateStr ? reserves.filter(r => r.date === selectedDateStr) : []
 
   const hourlyBreakdown = useMemo(() => {
-    if (selectedShifts.length === 0) return []
-    let minHour = 24, maxHour = 0
-    selectedShifts.forEach(s => {
-      const [fh] = s.time_from.split(":").map(Number)
-      const [th] = s.time_to.split(":").map(Number)
-      minHour = Math.min(minHour, fh)
-      maxHour = Math.max(maxHour, th)
-    })
     const slots = []
-    for (let h = minHour; h < maxHour; h++) {
+    for (let h = 7; h < 23; h++) {
       const active = selectedShifts.filter(s => {
         const [fh, fm] = s.time_from.split(":").map(Number)
         const [th, tm] = s.time_to.split(":").map(Number)
         return (fh * 60 + fm) < (h + 1) * 60 && (th * 60 + tm) > h * 60
       })
-      if (active.length > 0) slots.push({ hour: h, couriers: active })
+      slots.push({ hour: h, couriers: active })
     }
     return slots
   }, [selectedShifts])
+
+  const hourlyReserveBreakdown = useMemo(() => {
+    const slots = []
+    for (let h = 7; h < 23; h++) {
+      const active = selectedReserves.filter(r => {
+        if (r.status === "vacation" || r.status === "sick_leave") return false
+        const [fh, fm] = r.time_from.split(":").map(Number)
+        const [th, tm] = r.time_to.split(":").map(Number)
+        return (fh * 60 + fm) < (h + 1) * 60 && (th * 60 + tm) > h * 60
+      })
+      slots.push({ hour: h, reserves: active })
+    }
+    return slots
+  }, [selectedReserves])
 
   // Month prefix for filtering
   const monthPrefix = `${currentMonth.getFullYear()}-${(currentMonth.getMonth() + 1).toString().padStart(2, "0")}`
@@ -454,7 +461,7 @@ export default function AdminPage() {
                 <button
                   key={day}
                   onClick={() =>
-                    { setSelectedDate(new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day)); setSelectedHour(null) }
+                    { setSelectedDate(new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day)); setSelectedHour(null); setSelectedReserveHour(null) }
                   }
                   className={cn(
                     "relative flex flex-col items-center justify-center h-12 rounded-xl text-sm font-medium transition-colors border",
@@ -551,57 +558,55 @@ export default function AdminPage() {
                 </div>
               )}
 
-              {hourlyBreakdown.length > 0 && (() => {
-                const maxCount = Math.max(...hourlyBreakdown.map(s => s.couriers.length))
+              {selectedShifts.length > 0 && (() => {
+                const maxCount = Math.max(...hourlyBreakdown.map(s => s.couriers.length), 1)
                 return (
                   <div className="mb-4 rounded-2xl border border-border overflow-hidden bg-background">
                     <div className="px-4 py-3 border-b border-border">
-                      <h3 className="text-sm font-bold text-foreground">По часам</h3>
+                      <h3 className="text-sm font-bold text-foreground">Выходы по часам</h3>
                     </div>
-                    {hourlyBreakdown.map((slot, idx) => (
-                      <div key={slot.hour}>
-                        <button
-                          onClick={() => setSelectedHour(selectedHour === slot.hour ? null : slot.hour)}
-                          className={cn(
-                            "w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors",
-                            idx > 0 && "border-t border-border",
-                            selectedHour === slot.hour ? "bg-secondary" : "hover:bg-secondary/50"
-                          )}
-                        >
-                          <span className="text-xs font-mono text-muted-foreground w-10 shrink-0">
-                            {String(slot.hour).padStart(2, "0")}:00
-                          </span>
-                          <div className="flex-1 h-4 bg-secondary rounded-full overflow-hidden">
-                            <div
-                              className="h-full bg-primary/50 rounded-full transition-all duration-300"
-                              style={{ width: `${(slot.couriers.length / maxCount) * 100}%` }}
-                            />
-                          </div>
-                          <span className="text-xs font-semibold text-foreground w-12 text-right shrink-0">
-                            {slot.couriers.length} чел.
-                          </span>
-                          <ChevronDown className={cn(
-                            "h-3.5 w-3.5 text-muted-foreground shrink-0 transition-transform",
-                            selectedHour === slot.hour && "rotate-180"
-                          )} />
-                        </button>
-                        {selectedHour === slot.hour && (
-                          <div className="px-4 py-2.5 bg-secondary/50 border-t border-border flex flex-wrap gap-1.5">
-                            {slot.couriers.map(s => (
-                              <span
-                                key={s.id}
-                                className="inline-flex items-center text-xs font-medium text-foreground bg-background px-2.5 py-1 rounded-lg border border-border"
-                              >
-                                {getCourierName(s.user_id)}
-                                <span className="ml-1.5 text-muted-foreground">
-                                  {s.time_from}–{s.time_to}
+                    {hourlyBreakdown.map((slot, idx) => {
+                      const empty = slot.couriers.length === 0
+                      return (
+                        <div key={slot.hour}>
+                          <button
+                            onClick={() => !empty && setSelectedHour(selectedHour === slot.hour ? null : slot.hour)}
+                            disabled={empty}
+                            className={cn(
+                              "w-full flex items-center gap-3 px-4 py-2 text-left transition-colors",
+                              idx > 0 && "border-t border-border",
+                              !empty && (selectedHour === slot.hour ? "bg-secondary" : "hover:bg-secondary/50"),
+                              empty && "opacity-35 cursor-default"
+                            )}
+                          >
+                            <span className="text-xs font-mono text-muted-foreground w-10 shrink-0">
+                              {String(slot.hour).padStart(2, "0")}:00
+                            </span>
+                            <div className="flex-1 h-3 bg-secondary rounded-full overflow-hidden">
+                              <div
+                                className="h-full bg-primary/50 rounded-full transition-all duration-300"
+                                style={{ width: `${(slot.couriers.length / maxCount) * 100}%` }}
+                              />
+                            </div>
+                            <span className={cn("text-xs w-12 text-right shrink-0", empty ? "text-muted-foreground" : "font-semibold text-foreground")}>
+                              {empty ? "—" : `${slot.couriers.length} чел.`}
+                            </span>
+                            {!empty && <ChevronDown className={cn("h-3.5 w-3.5 text-muted-foreground shrink-0 transition-transform", selectedHour === slot.hour && "rotate-180")} />}
+                            {empty && <span className="w-3.5 shrink-0" />}
+                          </button>
+                          {selectedHour === slot.hour && !empty && (
+                            <div className="px-4 py-2.5 bg-secondary/50 border-t border-border flex flex-wrap gap-1.5">
+                              {slot.couriers.map(s => (
+                                <span key={s.id} className="inline-flex items-center text-xs font-medium text-foreground bg-background px-2.5 py-1 rounded-lg border border-border">
+                                  {getCourierName(s.user_id)}
+                                  <span className="ml-1.5 text-muted-foreground">{s.time_from}–{s.time_to}</span>
                                 </span>
-                              </span>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    ))}
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )
+                    })}
                   </div>
                 )
               })()}
@@ -655,6 +660,76 @@ export default function AdminPage() {
                   })}
                 </div>
               )}
+
+              {selectedReserves.some(r => r.status !== "vacation" && r.status !== "sick_leave") && (() => {
+                const maxCount = Math.max(...hourlyReserveBreakdown.map(s => s.reserves.length), 1)
+                return (
+                  <div className="mt-4 rounded-2xl border border-border overflow-hidden bg-background">
+                    <div className="px-4 py-3 border-b border-border">
+                      <h3 className="text-sm font-bold text-foreground">Резервы по часам</h3>
+                    </div>
+                    {hourlyReserveBreakdown.map((slot, idx) => {
+                      const empty = slot.reserves.length === 0
+                      const canCount = slot.reserves.filter(r => r.status === "can").length
+                      const ifCount = slot.reserves.filter(r => r.status === "if_needed").length
+                      const cannotCount = slot.reserves.filter(r => r.status === "cannot").length
+                      return (
+                        <div key={slot.hour}>
+                          <button
+                            onClick={() => !empty && setSelectedReserveHour(selectedReserveHour === slot.hour ? null : slot.hour)}
+                            disabled={empty}
+                            className={cn(
+                              "w-full flex items-center gap-3 px-4 py-2 text-left transition-colors",
+                              idx > 0 && "border-t border-border",
+                              !empty && (selectedReserveHour === slot.hour ? "bg-secondary" : "hover:bg-secondary/50"),
+                              empty && "opacity-35 cursor-default"
+                            )}
+                          >
+                            <span className="text-xs font-mono text-muted-foreground w-10 shrink-0">
+                              {String(slot.hour).padStart(2, "0")}:00
+                            </span>
+                            <div className="flex-1 h-3 bg-secondary rounded-full overflow-hidden">
+                              <div
+                                className="h-full rounded-full transition-all duration-300"
+                                style={{
+                                  width: `${(slot.reserves.length / maxCount) * 100}%`,
+                                  background: cannotCount > 0 && canCount === 0 && ifCount === 0
+                                    ? "var(--destructive)"
+                                    : canCount > 0 ? "rgb(61 139 64 / 0.5)" : "rgb(245 197 24 / 0.6)"
+                                }}
+                              />
+                            </div>
+                            {empty ? (
+                              <span className="text-xs text-muted-foreground w-28 text-right shrink-0">—</span>
+                            ) : (
+                              <div className="flex items-center gap-1 shrink-0">
+                                {canCount > 0 && <span className="text-xs font-semibold bg-primary/10 text-primary px-1.5 py-0.5 rounded-md">{canCount}</span>}
+                                {ifCount > 0 && <span className="text-xs font-semibold bg-[#f5c518]/10 text-[#b8940e] px-1.5 py-0.5 rounded-md">{ifCount}</span>}
+                                {cannotCount > 0 && <span className="text-xs font-semibold bg-destructive/10 text-destructive px-1.5 py-0.5 rounded-md">{cannotCount}</span>}
+                              </div>
+                            )}
+                            {!empty && <ChevronDown className={cn("h-3.5 w-3.5 text-muted-foreground shrink-0 transition-transform", selectedReserveHour === slot.hour && "rotate-180")} />}
+                            {empty && <span className="w-3.5 shrink-0" />}
+                          </button>
+                          {selectedReserveHour === slot.hour && !empty && (
+                            <div className="px-4 py-2.5 bg-secondary/50 border-t border-border flex flex-wrap gap-1.5">
+                              {slot.reserves.map(r => (
+                                <span key={r.id} className="inline-flex items-center gap-1.5 text-xs font-medium text-foreground bg-background px-2.5 py-1 rounded-lg border border-border">
+                                  {getCourierName(r.user_id)}
+                                  <span className={cn("text-xs px-1.5 py-0.5 rounded font-semibold", statusColors[r.status] || "")}>
+                                    {statusLabels[r.status]}
+                                  </span>
+                                  <span className="text-muted-foreground">{r.time_from}–{r.time_to}</span>
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )
+                    })}
+                  </div>
+                )
+              })()}
             </div>
           )}
         </div>
